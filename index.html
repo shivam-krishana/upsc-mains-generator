@@ -227,6 +227,29 @@
             min-height: 60px;
         }
 
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.1rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-row input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            accent-color: var(--navy-light);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .toggle-row span {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
         .btn-add-q {
             width: 100%;
             padding: 0.6rem;
@@ -494,6 +517,11 @@
                 Add Question
             </button>
 
+            <label class="toggle-row">
+                <input type="checkbox" id="includeInstructions">
+                <span>Include instructions cover page</span>
+            </label>
+
             <button class="btn-generate" id="btnGenerate" onclick="handleGenerate()">
                 Generate Answer Sheet
             </button>
@@ -760,6 +788,14 @@
             var doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
             registerFonts(doc);
 
+            var includeInstr = document.getElementById('includeInstructions').checked;
+            var isFirstPage = true;
+
+            if (includeInstr) {
+                drawInstructionsPage(doc);
+                isFirstPage = false;
+            }
+
             var cL = PG.margin.left;
             var cR = PG.W - PG.margin.right;
             var cT = PG.margin.top;
@@ -769,17 +805,16 @@
             var qLineX = cL + PG.qColW;
             var mLineX = cR - PG.rightMarginW;
 
-            var totalPages = 0;
-            var isFirstPage = true;
+            var totalPages = includeInstr ? 1 : 0;
 
             for (var q = 0; q < questions.length; q++) {
                 var item = questions[q];
                 var numPages = PG.pages[item.marks] || 2;
-                totalPages += numPages;
 
                 for (var p = 0; p < numPages; p++) {
                     if (!isFirstPage) doc.addPage();
                     isFirstPage = false;
+                    totalPages++;
 
                     drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB);
                     drawMarginText(doc, mLineX, cR, cT, cB);
@@ -789,12 +824,129 @@
                             item.qno, item.wordLimit, cL, qLineX, mLineX, cR, cT);
                     }
 
-                    drawFooter(doc, totalPages - numPages + p + 1, item.marks);
+                    drawFooter(doc, totalPages, item.marks);
                 }
             }
 
             generatedPageCount = totalPages;
             return doc;
+        }
+
+        function drawInstructionsPage(doc) {
+            var W = PG.W;
+            var cx = W / 2;
+            var mL = 20;
+            var mR = 20;
+            var contentW = W - mL - mR;
+            var y = 28;
+
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.5);
+            doc.rect(12, 12, W - 24, PG.H - 24);
+
+            doc.setFont('times', 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text('QUESTION CUM ANSWER BOOKLET (QCA)', cx, y, { align: 'center' });
+
+            if (fontsReady) {
+                y += 6;
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(12);
+                doc.text('\u092A\u094D\u0930\u0936\u094D\u0928 \u0938\u0939 \u0909\u0924\u094D\u0924\u0930 \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E', cx, y, { align: 'center' });
+            }
+
+            y += 10;
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.3);
+            doc.line(mL, y, W - mR, y);
+
+            y += 10;
+            doc.setFont('times', 'bold');
+            doc.setFontSize(13);
+            doc.text('INSTRUCTIONS TO CANDIDATES', cx, y, { align: 'center' });
+
+            if (fontsReady) {
+                y += 6;
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(11);
+                doc.text('\u092A\u0930\u0940\u0915\u094D\u0937\u093E\u0930\u094D\u0925\u093F\u092F\u094B\u0902 \u0915\u0947 \u0932\u093F\u090F \u0928\u093F\u0930\u094D\u0926\u0947\u0936', cx, y, { align: 'center' });
+            }
+
+            y += 12;
+            doc.setLineWidth(0.2);
+            doc.line(mL, y, W - mR, y);
+
+            y += 8;
+            var instructions = [
+                '1.  This Booklet contains 24 pages including blank pages for rough work. Verify the page count immediately.',
+                '2.  Write your Roll Number in the space provided on the top of this page.',
+                '3.  Answers to each question must start on a fresh page. Clearly indicate the question number.',
+                '4.  The number of marks carried by a question is indicated against it.',
+                '5.  Attempts of questions shall be counted in the order in which they have been written.',
+                '6.  In case of any discrepancy in the English and Hindi versions, the English version will be treated as final.',
+                '7.  Any page or portion of a page left blank in the answer booklet must be struck through clearly.',
+                '8.  Do not write your name or any identification mark on any part of the booklet.',
+                '9.  Rough work, if any, should be done on the blank pages provided at the end of this booklet.',
+                '10. Do not tear, fold, or mutilate this booklet. Return the complete booklet to the invigilator.'
+            ];
+
+            doc.setFont('times', 'normal');
+            doc.setFontSize(10.5);
+            doc.setTextColor(0, 0, 0);
+            var lh = 5.5;
+
+            for (var i = 0; i < instructions.length; i++) {
+                var lines = doc.splitTextToSize(instructions[i], contentW);
+                doc.text(lines, mL, y);
+                y += lines.length * lh + 2;
+            }
+
+            y += 6;
+            doc.setLineWidth(0.2);
+            doc.line(mL, y, W - mR, y);
+
+            y += 10;
+            doc.setFont('times', 'bold');
+            doc.setFontSize(11);
+            doc.text('IMPORTANT:', mL, y);
+            y += 7;
+            doc.setFont('times', 'normal');
+            doc.setFontSize(10.5);
+
+            var important = [
+                'This booklet must be handed over to the Invigilator before leaving the Examination Hall.',
+                'Any candidate who does not return this booklet will be liable to disciplinary action.',
+                'No additional sheet will be provided. Write your answers within the space available.'
+            ];
+
+            for (var j = 0; j < important.length; j++) {
+                var impLines = doc.splitTextToSize('\u2022  ' + important[j], contentW);
+                doc.text(impLines, mL, y);
+                y += impLines.length * lh + 1.5;
+            }
+
+            y += 8;
+            doc.setLineWidth(0.3);
+            doc.line(mL, y, W - mR, y);
+
+            y += 8;
+            doc.setFont('times', 'bold');
+            doc.setFontSize(10);
+            doc.text('Roll Number / \u0905\u0928\u0941\u0915\u094D\u0930\u092E\u093E\u0902\u0915 :', mL, y);
+
+            var boxX = mL + 52;
+            var boxW = 10;
+            doc.setLineWidth(0.3);
+            for (var b = 0; b < 8; b++) {
+                doc.rect(boxX + b * (boxW + 2), y - 5, boxW, 8);
+            }
+
+            y += 16;
+            doc.setFont('times', 'italic');
+            doc.setFontSize(9);
+            doc.setTextColor(80, 80, 80);
+            doc.text('This is a practice booklet generated for self-study purposes only.', cx, y, { align: 'center' });
         }
 
         function drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB) {
