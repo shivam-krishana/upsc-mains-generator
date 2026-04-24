@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPSC Mains Answer Sheet Generator</title>
+    <link type="image/png" sizes="16x16" rel="icon" href="../assets/anime.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --navy: #1a1a2e;
+            --navy-mid: #16213e;
+            --navy-light: #0f3460;
+            --surface: #ffffff;
+            --bg: #f0f2f5;
+            --text: #1a1a2e;
+            --text-muted: #6b7280;
+            --border: #e0e4ea;
+            --focus-ring: rgba(15, 52, 96, 0.12);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .site-header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 50%, var(--navy-light) 100%);
+            color: #fff;
+            padding: 2rem 2rem 2.2rem;
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+            position: relative;
+        }
+
+        .site-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin-bottom: 0.35rem;
+        }
+
+        .site-header p {
+            font-size: 0.92rem;
+            opacity: 0.75;
+            font-weight: 300;
+        }
+
+        .back-link {
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .form-panel {
+            position: sticky;
+            top: 2rem;
+        }
+
+        .form-panel h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.35rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 0.85rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.92rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            line-height: 1.65;
+            color: var(--text);
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--navy-light);
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        .form-group textarea::placeholder {
+            color: #aab0bc;
+        }
+
+        .form-group select,
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.92rem;
+            font-family: inherit;
+            background: var(--surface);
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+
+        .form-group select:focus,
+        .form-group input[type="number"]:focus {
+            outline: none;
+            border-color: var(--navy-light);
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, var(--navy-light), var(--navy));
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-family: inherit;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(15, 52, 96, 0.3);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .info-box {
+            margin-top: 1.25rem;
+            padding: 0.85rem 1rem;
+            background: #f0f4ff;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: var(--navy-light);
+            line-height: 1.6;
+            border-left: 3px solid var(--navy-light);
+        }
+
+        .preview-panel {
+            min-height: 700px;
+        }
+
+        .preview-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .preview-top h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .btn-action {
+            padding: 0.55rem 1.1rem;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.15s;
+            font-family: inherit;
+            color: var(--text);
+        }
+
+        .btn-action:hover {
+            border-color: var(--navy-light);
+            color: var(--navy-light);
+            background: #f5f8ff;
+        }
+
+        .btn-action.primary {
+            background: var(--navy-light);
+            color: #fff;
+            border-color: var(--navy-light);
+        }
+
+        .btn-action.primary:hover {
+            background: var(--navy);
+            border-color: var(--navy);
+        }
+
+        .btn-action svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .preview-frame {
+            background: #dde1e7;
+            border-radius: var(--radius);
+            overflow: hidden;
+            min-height: 580px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .preview-frame iframe {
+            width: 100%;
+            height: 750px;
+            border: none;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #9ca3af;
+        }
+
+        .empty-state .icon-wrap {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 1.2rem;
+            background: #e8ecf1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state svg {
+            width: 32px;
+            height: 32px;
+            stroke: #9ca3af;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            max-width: 280px;
+            margin: 0 auto;
+            line-height: 1.65;
+        }
+
+        .page-info {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--navy);
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 960px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .form-panel {
+                position: static;
+            }
+
+            .back-link {
+                position: static;
+                transform: none;
+                margin-bottom: 0.75rem;
+                justify-content: center;
+            }
+
+            .site-header {
+                padding-top: 1rem;
+            }
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .preview-frame,
+            .preview-frame iframe {
+                visibility: visible;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="site-header">
+        <a href="../index.html" class="back-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Portfolio
+        </a>
+        <h1>UPSC Mains Answer Sheet Generator</h1>
+        <p>Generate authentic UPSC Mains QCA booklet practice sheets</p>
+    </header>
+
+    <main class="container">
+        <section class="card form-panel">
+            <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                </svg>
+                Configure Sheet
+            </h2>
+
+            <div class="form-group">
+                <label for="question">Question *</label>
+                <textarea id="question"
+                    placeholder="e.g. Discuss the role of the judiciary in upholding the basic structure doctrine of the Indian Constitution."></textarea>
+            </div>
+
+            <div class="row-2">
+                <div class="form-group">
+                    <label for="marks">Marks</label>
+                    <select id="marks">
+                        <option value="10">10 Marks</option>
+                        <option value="15" selected>15 Marks</option>
+                        <option value="20">20 Marks</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="qno">Question No.</label>
+                    <input type="number" id="qno" value="1" min="1" max="99">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="wordLimit">Word Limit</label>
+                <select id="wordLimit">
+                    <option value="150">150 words</option>
+                    <option value="250" selected>250 words</option>
+                </select>
+            </div>
+
+            <button class="btn-generate" id="btnGenerate" onclick="handleGenerate()">
+                Generate Answer Sheet
+            </button>
+
+            <div class="info-box">
+                <strong>Pages:</strong> 10 marks = 2 pages, 15 marks = 3 pages, 20 marks = 4 pages.
+                Format matches the official UPSC CSE Mains QCA booklet. Hindi translation is generated automatically.
+            </div>
+        </section>
+
+        <section class="card preview-panel">
+            <div class="preview-top">
+                <h2>Preview</h2>
+                <div class="preview-actions" id="previewActions" style="display: none;">
+                    <button class="btn-action primary" onclick="downloadPDF()" title="Download PDF">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download PDF
+                    </button>
+                    <button class="btn-action" onclick="printPDF()" title="Print directly">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9" />
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                            <rect x="6" y="14" width="12" height="8" />
+                        </svg>
+                        Print
+                    </button>
+                </div>
+            </div>
+
+            <div class="preview-frame" id="previewFrame">
+                <div class="empty-state" id="emptyState">
+                    <div class="icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <line x1="9" y1="3" x2="9" y2="21" />
+                            <line x1="3" y1="9" x2="21" y2="9" />
+                            <line x1="3" y1="14" x2="21" y2="14" />
+                            <line x1="3" y1="19" x2="21" y2="19" />
+                        </svg>
+                    </div>
+                    <p>Enter a question and click <strong>Generate</strong> to preview your UPSC Mains answer sheet</p>
+                </div>
+            </div>
+            <div class="page-info" id="pageInfo"></div>
+        </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        var currentBlobUrl = null;
+        var currentDoc = null;
+        var generatedPageCount = 0;
+
+        var fontRegBase64 = null;
+        var fontBoldBase64 = null;
+        var fontsReady = false;
+
+        var PG = {
+            W: 210,
+            H: 297,
+            margin: { top: 12, bottom: 14, left: 15, right: 8 },
+            qColW: 14,
+            rightMarginW: 26,
+            paperCode: 'XXX-X-GSI',
+            pages: { 10: 2, 15: 3, 20: 4 }
+        };
+
+        function bufToBase64(buf) {
+            var bytes = new Uint8Array(buf);
+            var bin = '';
+            for (var i = 0; i < bytes.length; i += 8192) {
+                var chunk = bytes.subarray(i, Math.min(i + 8192, bytes.length));
+                for (var j = 0; j < chunk.length; j++) {
+                    bin += String.fromCharCode(chunk[j]);
+                }
+            }
+            return btoa(bin);
+        }
+
+        async function loadFonts() {
+            try {
+                var results = await Promise.all([
+                    fetch('fonts/NotoSansDevanagari-Regular.ttf').then(function (r) { return r.arrayBuffer(); }),
+                    fetch('fonts/NotoSansDevanagari-Bold.ttf').then(function (r) { return r.arrayBuffer(); })
+                ]);
+                fontRegBase64 = bufToBase64(results[0]);
+                fontBoldBase64 = bufToBase64(results[1]);
+                fontsReady = true;
+            } catch (e) {
+                console.warn('Devanagari fonts failed to load:', e);
+            }
+        }
+
+        async function translateToHindi(text) {
+            try {
+                var resp = await fetch(
+                    'https://api.mymemory.translated.net/get?q=' +
+                    encodeURIComponent(text) + '&langpair=en|hi'
+                );
+                var data = await resp.json();
+                if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+                    var t = data.responseData.translatedText;
+                    var el = document.createElement('textarea');
+                    el.innerHTML = t;
+                    return el.value;
+                }
+            } catch (e) {
+                console.warn('Translation failed:', e);
+            }
+            return null;
+        }
+
+        function showToast(msg) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(function () { t.classList.remove('show'); }, 2800);
+        }
+
+        async function handleGenerate() {
+            var question = document.getElementById('question').value.trim();
+            if (!question) {
+                showToast('Please enter a question');
+                document.getElementById('question').focus();
+                return;
+            }
+
+            var marks = parseInt(document.getElementById('marks').value, 10);
+            var qno = parseInt(document.getElementById('qno').value, 10) || 1;
+            var wordLimit = parseInt(document.getElementById('wordLimit').value, 10);
+
+            var btn = document.getElementById('btnGenerate');
+            btn.disabled = true;
+            btn.textContent = 'Translating & Generating...';
+
+            try {
+                var hindiQuestion = await translateToHindi(question);
+                var doc = generateSheet(question, hindiQuestion, marks, qno, wordLimit);
+                currentDoc = doc;
+                showPreview(doc);
+                if (hindiQuestion) {
+                    showToast('Sheet generated with Hindi translation');
+                } else {
+                    showToast('Sheet generated (Hindi translation unavailable)');
+                }
+            } catch (err) {
+                showToast('Generation failed. Please try again.');
+                console.error(err);
+            }
+            btn.disabled = false;
+            btn.textContent = 'Generate Answer Sheet';
+        }
+
+        function registerFonts(doc) {
+            if (!fontsReady) return;
+            doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', fontRegBase64);
+            doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoDevReg', 'normal');
+            doc.addFileToVFS('NotoSansDevanagari-Bold.ttf', fontBoldBase64);
+            doc.addFont('NotoSansDevanagari-Bold.ttf', 'NotoDevBold', 'normal');
+        }
+
+        function generateSheet(engQuestion, hindiQuestion, marks, qno, wordLimit) {
+            var jsPDF = window.jspdf.jsPDF;
+            var doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+            registerFonts(doc);
+
+            var numPages = PG.pages[marks] || 2;
+            generatedPageCount = numPages;
+
+            var cL = PG.margin.left;
+            var cR = PG.W - PG.margin.right;
+            var cT = PG.margin.top;
+            var cB = PG.H - PG.margin.bottom;
+            var cW = cR - cL;
+            var cH = cB - cT;
+
+            var qLineX = cL + PG.qColW;
+            var mLineX = cR - PG.rightMarginW;
+
+            for (var p = 0; p < numPages; p++) {
+                if (p > 0) doc.addPage();
+
+                drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB);
+                drawMarginText(doc, mLineX, cR, cT, cB);
+
+                if (p === 0) {
+                    drawQuestion(doc, engQuestion, hindiQuestion, marks, qno, wordLimit,
+                        cL, qLineX, mLineX, cR, cT);
+                }
+
+                drawFooter(doc, p + 1, marks);
+            }
+
+            return doc;
+        }
+
+        function drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB) {
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.35);
+            doc.rect(cL, cT, cW, cH);
+            doc.setLineWidth(0.2);
+            doc.line(qLineX, cT, qLineX, cB);
+            doc.line(mLineX, cT, mLineX, cB);
+        }
+
+        function drawMarginText(doc, mLineX, cR, cT, cB) {
+            var colW = cR - mLineX;
+            var cx = mLineX + colW / 2;
+            var y = cT + 7;
+            var lh = 3.5;
+
+            if (fontsReady) {
+                doc.setFont('NotoDevReg', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(60, 60, 60);
+                var hindiLines = [
+                    '\u0909\u092E\u094D\u092E\u0940\u0926\u0935\u093E\u0930\u094B\u0902',
+                    '\u0915\u094B \u0907\u0938',
+                    '\u0939\u093E\u0936\u093F\u090F \u092E\u0947\u0902',
+                    '\u0928\u0939\u0940\u0902',
+                    '\u0932\u093F\u0916\u0928\u093E',
+                    '\u091A\u093E\u0939\u093F\u090F'
+                ];
+                for (var i = 0; i < hindiLines.length; i++) {
+                    doc.text(hindiLines[i], cx, y + i * lh, { align: 'center' });
+                }
+                y += hindiLines.length * lh + 2;
+            }
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(60, 60, 60);
+            var engLines = ['Candidates', 'must not', 'write on', 'this margin'];
+            for (var j = 0; j < engLines.length; j++) {
+                doc.text(engLines[j], cx, y + j * lh, { align: 'center' });
+            }
+        }
+
+        function drawQuestion(doc, engQ, hindiQ, marks, qno, wordLimit,
+            cL, qLineX, mLineX, cR, cT) {
+
+            var textPad = 3;
+            var textX = qLineX + textPad;
+            var maxW = mLineX - qLineX - textPad - 2;
+            var qCx = cL + PG.qColW / 2;
+            var lineH = 5.2;
+            var y = cT + 9;
+
+            doc.setFont('times', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Q' + qno + '.', qCx, y, { align: 'center' });
+
+            if (hindiQ && fontsReady) {
+                var hindiWL = ' (' + wordLimit + ' \u0936\u092C\u094D\u0926\u094B\u0902 \u092E\u0947\u0902 \u0909\u0924\u094D\u0924\u0930 \u0926\u0940\u091C\u093F\u090F)';
+                var hindiFullText = hindiQ + hindiWL;
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                var hindiWrapped = doc.splitTextToSize(hindiFullText, maxW);
+                var hindiLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                doc.text(hindiWrapped, textX, y);
+                y += (hindiWrapped.length - 1) * hindiLeading + hindiLeading + lineH;
+            }
+
+            var engFullText = engQ + ' (Answer in ' + wordLimit + ' words)';
+            doc.setFont('times', 'italic');
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            var engWrapped = doc.splitTextToSize(engFullText, maxW);
+            var engLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+            doc.text(engWrapped, textX, y);
+            var lastLineY = y + (engWrapped.length - 1) * engLeading;
+
+            doc.setFont('times', 'bold');
+            doc.setFontSize(11);
+            doc.text(String(marks), textX + maxW, lastLineY, { align: 'right' });
+        }
+
+        function drawFooter(doc, pageNum, marks) {
+            var footerY = PG.H - PG.margin.bottom + 8;
+            doc.setFont('times', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(PG.paperCode + '/' + marks, PG.margin.left, footerY);
+            doc.text(String(pageNum), PG.W / 2, footerY, { align: 'center' });
+        }
+
+        function showPreview(doc) {
+            if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+            var blob = doc.output('blob');
+            currentBlobUrl = URL.createObjectURL(blob);
+
+            var frame = document.getElementById('previewFrame');
+            var empty = document.getElementById('emptyState');
+            if (empty) empty.remove();
+
+            var iframe = frame.querySelector('iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'pdfFrame';
+                iframe.title = 'PDF Preview';
+                frame.appendChild(iframe);
+            }
+            iframe.src = currentBlobUrl;
+
+            document.getElementById('previewActions').style.display = 'flex';
+            document.getElementById('pageInfo').textContent =
+                generatedPageCount + ' page' + (generatedPageCount > 1 ? 's' : '') + ' generated';
+        }
+
+        function downloadPDF() {
+            if (!currentDoc) { showToast('Generate a sheet first'); return; }
+            var qno = document.getElementById('qno').value || '1';
+            var marks = document.getElementById('marks').value;
+            currentDoc.save('UPSC_Mains_Q' + qno + '_' + marks + 'marks.pdf');
+            showToast('PDF downloaded');
+        }
+
+        function printPDF() {
+            if (!currentBlobUrl) { showToast('Generate a sheet first'); return; }
+            var iframe = document.getElementById('pdfFrame');
+            if (iframe && iframe.contentWindow) {
+                setTimeout(function () {
+                    try { iframe.contentWindow.print(); }
+                    catch (e) { window.open(currentBlobUrl, '_blank'); showToast('Print opened in new tab'); }
+                }, 300);
+            }
+        }
+
+        document.getElementById('marks').addEventListener('change', function () {
+            var m = parseInt(this.value, 10);
+            var wl = document.getElementById('wordLimit');
+            if (m === 10) { wl.value = '150'; }
+            else { wl.value = '250'; }
+        });
+
+        document.getElementById('question').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                handleGenerate();
+            }
+        });
+
+        loadFonts().then(function () {
+            if (fontsReady) {
+                console.log('Devanagari fonts loaded successfully');
+            }
+        });
+    </script>
+</body>
+
+</html>
