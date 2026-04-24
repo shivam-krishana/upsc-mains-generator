@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
         *,
         *::before,
@@ -913,8 +914,10 @@
             var roughCountForTotal = includeRoughForCount ? (parseInt(document.getElementById('roughPageCount').value, 10) || 4) : 0;
             var totalBookletPages = answerPages + roughCountForTotal;
 
+            var bookletNo = generateBookletNo();
+
             if (includeInstr) {
-                drawCoverPage(doc, paper, totalBookletPages);
+                drawCoverPage(doc, paper, totalBookletPages, bookletNo);
                 doc.addPage();
                 drawImportantInstructionsPage(doc, paper);
                 isFirstPage = false;
@@ -966,7 +969,33 @@
             return doc;
         }
 
-        function drawCoverPage(doc, paper, answerPages) {
+        function generateBookletNo() {
+            return String(1000000 + Math.floor(Math.random() * 9000000));
+        }
+
+        function drawQRCode(doc, text, x, y, size) {
+            try {
+                var qr = qrcode(0, 'M');
+                qr.addData(text);
+                qr.make();
+                var modules = qr.getModuleCount();
+                var cellSize = size / modules;
+                doc.setFillColor(0, 0, 0);
+                for (var row = 0; row < modules; row++) {
+                    for (var col = 0; col < modules; col++) {
+                        if (qr.isDark(row, col)) {
+                            doc.rect(x + col * cellSize, y + row * cellSize, cellSize, cellSize, 'F');
+                        }
+                    }
+                }
+            } catch (e) {
+                doc.setFont('times', 'normal');
+                doc.setFontSize(7);
+                doc.text('QR', x + size / 2, y + size / 2, { align: 'center' });
+            }
+        }
+
+        function drawCoverPage(doc, paper, answerPages, bookletNo) {
             var W = PG.W, H = PG.H;
             var mL = 14, mR = 14;
             var cx = W / 2;
@@ -1002,10 +1031,8 @@
                 doc.text(paper.paperEn, cx + 10, 40, { align: 'center' });
             }
 
-            doc.setFont('times', 'normal');
-            doc.setFontSize(8);
-            doc.text('QR CODE', mL + 20, 30, { align: 'center' });
             doc.rect(mL + 2, 14, 36, 26);
+            drawQRCode(doc, paper.code + '/' + bookletNo, mL + 7, 16, 22);
 
             doc.setFont('times', 'normal');
             doc.setFontSize(8);
@@ -1112,7 +1139,7 @@
             doc.setFontSize(8);
             doc.text('QCA Booklet No.', formMidX + 3, fy + 4);
             doc.setFontSize(16);
-            doc.text('1000066', formMidX + 3, fy + 14);
+            doc.text(bookletNo, formMidX + 3, fy + 14);
 
             fy = formTop + 14;
             if (fontsReady) {
@@ -1159,9 +1186,7 @@
             doc.rect(mL, sec2Top, rX - mL, sec2H);
 
             doc.rect(mL + 2, sec2Top + 3, 36, 24);
-            doc.setFont('times', 'normal');
-            doc.setFontSize(8);
-            doc.text('QR CODE', mL + 20, sec2Top + 16, { align: 'center' });
+            drawQRCode(doc, paper.code + '/' + bookletNo, mL + 9, sec2Top + 5, 20);
 
             var sec2cx = mL + 40 + (formMidX - mL - 40) / 2;
             if (fontsReady) {
