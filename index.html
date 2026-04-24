@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UPSC Mains Answer Sheet Generator</title>
-    <link type="image/png" sizes="16x16" rel="icon" href="../assets/anime.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -110,7 +109,7 @@
 
         .form-group textarea {
             width: 100%;
-            min-height: 150px;
+            min-height: 90px;
             padding: 0.85rem 1rem;
             border: 2px solid var(--border);
             border-radius: var(--radius);
@@ -165,6 +164,92 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
+        }
+
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .question-card {
+            background: #f8f9fb;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .question-card:hover {
+            border-color: #c5cad4;
+        }
+
+        .question-card .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.7rem;
+        }
+
+        .question-card .q-header span {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--navy-light);
+        }
+
+        .btn-remove-q {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: color 0.15s, background 0.15s;
+            line-height: 1;
+        }
+
+        .btn-remove-q:hover {
+            color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .question-card .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .question-card .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .question-card .form-group textarea {
+            min-height: 60px;
+        }
+
+        .btn-add-q {
+            width: 100%;
+            padding: 0.6rem;
+            background: transparent;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+
+        .btn-add-q:hover {
+            border-color: var(--navy-light);
+            color: var(--navy-light);
+            background: #f5f8ff;
         }
 
         .btn-generate {
@@ -402,34 +487,12 @@
                 Configure Sheet
             </h2>
 
-            <div class="form-group">
-                <label for="question">Question *</label>
-                <textarea id="question"
-                    placeholder="e.g. Discuss the role of the judiciary in upholding the basic structure doctrine of the Indian Constitution."></textarea>
-            </div>
+            <div id="questionsContainer"></div>
 
-            <div class="row-2">
-                <div class="form-group">
-                    <label for="marks">Marks</label>
-                    <select id="marks">
-                        <option value="10">10 Marks</option>
-                        <option value="15" selected>15 Marks</option>
-                        <option value="20">20 Marks</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="qno">Question No.</label>
-                    <input type="number" id="qno" value="1" min="1" max="99">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="wordLimit">Word Limit</label>
-                <select id="wordLimit">
-                    <option value="150">150 words</option>
-                    <option value="250" selected>250 words</option>
-                </select>
-            </div>
+            <button class="btn-add-q" id="btnAddQ" onclick="addQuestion()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Question
+            </button>
 
             <button class="btn-generate" id="btnGenerate" onclick="handleGenerate()">
                 Generate Answer Sheet
@@ -491,6 +554,7 @@
         var currentBlobUrl = null;
         var currentDoc = null;
         var generatedPageCount = 0;
+        var questionCounter = 0;
 
         var fontRegBase64 = null;
         var fontBoldBase64 = null;
@@ -558,31 +622,122 @@
             setTimeout(function () { t.classList.remove('show'); }, 2800);
         }
 
+        function addQuestion() {
+            questionCounter++;
+            var container = document.getElementById('questionsContainer');
+            var card = document.createElement('div');
+            card.className = 'question-card';
+            card.dataset.qid = questionCounter;
+            card.innerHTML =
+                '<div class="q-header">' +
+                    '<span>Question <span class="q-num"></span></span>' +
+                    '<button class="btn-remove-q" onclick="removeQuestion(this)" title="Remove question">' +
+                        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                    '</button>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<textarea class="q-text" placeholder="Enter your question here..."></textarea>' +
+                '</div>' +
+                '<div class="row-3">' +
+                    '<div class="form-group">' +
+                        '<label>Marks</label>' +
+                        '<select class="q-marks" onchange="onMarksChange(this)">' +
+                            '<option value="10">10</option>' +
+                            '<option value="15" selected>15</option>' +
+                            '<option value="20">20</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Word Limit</label>' +
+                        '<select class="q-wl">' +
+                            '<option value="150">150</option>' +
+                            '<option value="250" selected>250</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Q No.</label>' +
+                        '<input type="number" class="q-no" value="' + questionCounter + '" min="1" max="99">' +
+                    '</div>' +
+                '</div>';
+            container.appendChild(card);
+            renumberQuestions();
+            updateRemoveButtons();
+        }
+
+        function removeQuestion(btn) {
+            var card = btn.closest('.question-card');
+            card.remove();
+            renumberQuestions();
+            updateRemoveButtons();
+        }
+
+        function renumberQuestions() {
+            var cards = document.querySelectorAll('.question-card');
+            cards.forEach(function (card, i) {
+                card.querySelector('.q-num').textContent = i + 1;
+            });
+        }
+
+        function updateRemoveButtons() {
+            var cards = document.querySelectorAll('.question-card');
+            cards.forEach(function (card) {
+                var btn = card.querySelector('.btn-remove-q');
+                btn.style.display = cards.length <= 1 ? 'none' : '';
+            });
+        }
+
+        function onMarksChange(sel) {
+            var m = parseInt(sel.value, 10);
+            var wl = sel.closest('.question-card').querySelector('.q-wl');
+            wl.value = (m === 10) ? '150' : '250';
+        }
+
+        function collectQuestions() {
+            var cards = document.querySelectorAll('.question-card');
+            var questions = [];
+            for (var i = 0; i < cards.length; i++) {
+                var text = cards[i].querySelector('.q-text').value.trim();
+                if (!text) continue;
+                questions.push({
+                    text: text,
+                    marks: parseInt(cards[i].querySelector('.q-marks').value, 10),
+                    wordLimit: parseInt(cards[i].querySelector('.q-wl').value, 10),
+                    qno: parseInt(cards[i].querySelector('.q-no').value, 10) || (i + 1)
+                });
+            }
+            return questions;
+        }
+
         async function handleGenerate() {
-            var question = document.getElementById('question').value.trim();
-            if (!question) {
-                showToast('Please enter a question');
-                document.getElementById('question').focus();
+            var questions = collectQuestions();
+            if (questions.length === 0) {
+                showToast('Please enter at least one question');
+                var first = document.querySelector('.q-text');
+                if (first) first.focus();
                 return;
             }
-
-            var marks = parseInt(document.getElementById('marks').value, 10);
-            var qno = parseInt(document.getElementById('qno').value, 10) || 1;
-            var wordLimit = parseInt(document.getElementById('wordLimit').value, 10);
 
             var btn = document.getElementById('btnGenerate');
             btn.disabled = true;
             btn.textContent = 'Translating & Generating...';
 
             try {
-                var hindiQuestion = await translateToHindi(question);
-                var doc = generateSheet(question, hindiQuestion, marks, qno, wordLimit);
+                var translations = await Promise.all(
+                    questions.map(function (q) { return translateToHindi(q.text); })
+                );
+                for (var i = 0; i < questions.length; i++) {
+                    questions[i].hindi = translations[i];
+                }
+
+                var doc = generateSheet(questions);
                 currentDoc = doc;
                 showPreview(doc);
-                if (hindiQuestion) {
-                    showToast('Sheet generated with Hindi translation');
+
+                var allTranslated = translations.every(function (t) { return t !== null; });
+                if (allTranslated) {
+                    showToast(questions.length + ' question' + (questions.length > 1 ? 's' : '') + ' generated with Hindi');
                 } else {
-                    showToast('Sheet generated (Hindi translation unavailable)');
+                    showToast('Sheet generated (some Hindi translations unavailable)');
                 }
             } catch (err) {
                 showToast('Generation failed. Please try again.');
@@ -600,14 +755,10 @@
             doc.addFont('NotoSansDevanagari-Bold.ttf', 'NotoDevBold', 'normal');
         }
 
-        function generateSheet(engQuestion, hindiQuestion, marks, qno, wordLimit) {
+        function generateSheet(questions) {
             var jsPDF = window.jspdf.jsPDF;
             var doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
             registerFonts(doc);
-
-            var numPages = PG.pages[marks] || 2;
-            generatedPageCount = numPages;
 
             var cL = PG.margin.left;
             var cR = PG.W - PG.margin.right;
@@ -615,24 +766,34 @@
             var cB = PG.H - PG.margin.bottom;
             var cW = cR - cL;
             var cH = cB - cT;
-
             var qLineX = cL + PG.qColW;
             var mLineX = cR - PG.rightMarginW;
 
-            for (var p = 0; p < numPages; p++) {
-                if (p > 0) doc.addPage();
+            var totalPages = 0;
+            var isFirstPage = true;
 
-                drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB);
-                drawMarginText(doc, mLineX, cR, cT, cB);
+            for (var q = 0; q < questions.length; q++) {
+                var item = questions[q];
+                var numPages = PG.pages[item.marks] || 2;
+                totalPages += numPages;
 
-                if (p === 0) {
-                    drawQuestion(doc, engQuestion, hindiQuestion, marks, qno, wordLimit,
-                        cL, qLineX, mLineX, cR, cT);
+                for (var p = 0; p < numPages; p++) {
+                    if (!isFirstPage) doc.addPage();
+                    isFirstPage = false;
+
+                    drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB);
+                    drawMarginText(doc, mLineX, cR, cT, cB);
+
+                    if (p === 0) {
+                        drawQuestion(doc, item.text, item.hindi, item.marks,
+                            item.qno, item.wordLimit, cL, qLineX, mLineX, cR, cT);
+                    }
+
+                    drawFooter(doc, totalPages - numPages + p + 1, item.marks);
                 }
-
-                drawFooter(doc, p + 1, marks);
             }
 
+            generatedPageCount = totalPages;
             return doc;
         }
 
@@ -753,9 +914,7 @@
 
         function downloadPDF() {
             if (!currentDoc) { showToast('Generate a sheet first'); return; }
-            var qno = document.getElementById('qno').value || '1';
-            var marks = document.getElementById('marks').value;
-            currentDoc.save('UPSC_Mains_Q' + qno + '_' + marks + 'marks.pdf');
+            currentDoc.save('UPSC_Mains_Answer_Sheet.pdf');
             showToast('PDF downloaded');
         }
 
@@ -770,19 +929,7 @@
             }
         }
 
-        document.getElementById('marks').addEventListener('change', function () {
-            var m = parseInt(this.value, 10);
-            var wl = document.getElementById('wordLimit');
-            if (m === 10) { wl.value = '150'; }
-            else { wl.value = '250'; }
-        });
-
-        document.getElementById('question').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                handleGenerate();
-            }
-        });
+        addQuestion();
 
         loadFonts().then(function () {
             if (fontsReady) {
