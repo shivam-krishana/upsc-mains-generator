@@ -513,7 +513,7 @@
 
             <div class="form-group">
                 <label for="paperSelect">Paper</label>
-                <select id="paperSelect">
+                <select id="paperSelect" onchange="onPaperChange()">
                     <option value="gs1">General Studies - Paper I</option>
                     <option value="gs2">General Studies - Paper II</option>
                     <option value="gs3">General Studies - Paper III</option>
@@ -664,7 +664,7 @@
             margin: { top: 12, bottom: 14, left: 15, right: 8 },
             qColW: 14,
             rightMarginW: 26,
-            pages: { 10: 2, 15: 3, 20: 4 }
+            pages: { 10: 2, 15: 3, 20: 4, 125: 12 }
         };
 
         function bufToBase64(buf) {
@@ -719,12 +719,49 @@
             setTimeout(function () { t.classList.remove('show'); }, 2800);
         }
 
+        function isEssayPaper() {
+            return document.getElementById('paperSelect').value === 'essay';
+        }
+
         function addQuestion() {
+            var essay = isEssayPaper();
+            var cards = document.querySelectorAll('.question-card');
+            if (essay && cards.length >= 2) {
+                showToast('Essay paper allows a maximum of 2 questions');
+                return;
+            }
+
             questionCounter++;
             var container = document.getElementById('questionsContainer');
             var card = document.createElement('div');
             card.className = 'question-card';
             card.dataset.qid = questionCounter;
+
+            var marksHtml, wlHtml;
+            if (essay) {
+                marksHtml =
+                    '<select class="q-marks" onchange="onMarksChange(this)" disabled>' +
+                        '<option value="125" selected>125</option>' +
+                    '</select>';
+                wlHtml =
+                    '<select class="q-wl">' +
+                        '<option value="1000">1000</option>' +
+                        '<option value="1200" selected>1200</option>' +
+                    '</select>';
+            } else {
+                marksHtml =
+                    '<select class="q-marks" onchange="onMarksChange(this)">' +
+                        '<option value="10">10</option>' +
+                        '<option value="15" selected>15</option>' +
+                        '<option value="20">20</option>' +
+                    '</select>';
+                wlHtml =
+                    '<select class="q-wl">' +
+                        '<option value="150">150</option>' +
+                        '<option value="250" selected>250</option>' +
+                    '</select>';
+            }
+
             card.innerHTML =
                 '<div class="q-header">' +
                     '<span>Question <span class="q-num"></span></span>' +
@@ -736,23 +773,9 @@
                     '<textarea class="q-text" placeholder="Enter your question here..."></textarea>' +
                 '</div>' +
                 '<div class="row-3">' +
-                    '<div class="form-group">' +
-                        '<label>Marks</label>' +
-                        '<select class="q-marks" onchange="onMarksChange(this)">' +
-                            '<option value="10">10</option>' +
-                            '<option value="15" selected>15</option>' +
-                            '<option value="20">20</option>' +
-                        '</select>' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label>Word Limit</label>' +
-                        '<select class="q-wl">' +
-                            '<option value="150">150</option>' +
-                            '<option value="250" selected>250</option>' +
-                        '</select>' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label>Q No.</label>' +
+                    '<div class="form-group"><label>Marks</label>' + marksHtml + '</div>' +
+                    '<div class="form-group"><label>Word Limit</label>' + wlHtml + '</div>' +
+                    '<div class="form-group"><label>Q No.</label>' +
                         '<input type="number" class="q-no" value="' + questionCounter + '" min="1" max="99">' +
                     '</div>' +
                 '</div>';
@@ -777,16 +800,31 @@
 
         function updateRemoveButtons() {
             var cards = document.querySelectorAll('.question-card');
+            var essay = isEssayPaper();
             cards.forEach(function (card) {
                 var btn = card.querySelector('.btn-remove-q');
                 btn.style.display = cards.length <= 1 ? 'none' : '';
             });
+            var addBtn = document.getElementById('btnAddQ');
+            if (essay && cards.length >= 2) {
+                addBtn.style.display = 'none';
+            } else {
+                addBtn.style.display = '';
+            }
         }
 
         function onMarksChange(sel) {
+            if (isEssayPaper()) return;
             var m = parseInt(sel.value, 10);
             var wl = sel.closest('.question-card').querySelector('.q-wl');
             wl.value = (m === 10) ? '150' : '250';
+        }
+
+        function onPaperChange() {
+            var container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            questionCounter = 0;
+            addQuestion();
         }
 
         function collectQuestions() {
