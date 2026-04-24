@@ -510,6 +510,19 @@
                 Configure Sheet
             </h2>
 
+            <div class="form-group">
+                <label for="paperSelect">Paper</label>
+                <select id="paperSelect">
+                    <option value="gs1">General Studies - Paper I</option>
+                    <option value="gs2">General Studies - Paper II</option>
+                    <option value="gs3">General Studies - Paper III</option>
+                    <option value="gs4">General Studies - Paper IV (Ethics)</option>
+                    <option value="essay">Essay</option>
+                    <option value="opt1">Optional Subject - Paper I</option>
+                    <option value="opt2">Optional Subject - Paper II</option>
+                </select>
+            </div>
+
             <div id="questionsContainer"></div>
 
             <button class="btn-add-q" id="btnAddQ" onclick="addQuestion()">
@@ -526,7 +539,7 @@
                 Generate Answer Sheet
             </button>
 
-            <div class="info-box">
+            <div class="info-box" id="infoBox">
                 <strong>Pages:</strong> 10 marks = 2 pages, 15 marks = 3 pages, 20 marks = 4 pages.
                 Format matches the official UPSC CSE Mains QCA booklet. Hindi translation is generated automatically.
             </div>
@@ -588,13 +601,26 @@
         var fontBoldBase64 = null;
         var fontsReady = false;
 
+        var PAPERS = {
+            gs1:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper I',   paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I',   code: 'XXX-X-GSI',   time: 3, marks: 250 },
+            gs2:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-GSII',  time: 3, marks: 250 },
+            gs3:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper III', paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 III', code: 'XXX-X-GSIII', time: 3, marks: 250 },
+            gs4:   { en: 'GENERAL STUDIES (Ethics)',  hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928 (\u0928\u0940\u0924\u093F\u0936\u093E\u0938\u094D\u0924\u094D\u0930)', paperEn: 'Paper IV', paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 IV', code: 'XXX-X-GSIV', time: 3, marks: 250 },
+            essay: { en: 'ESSAY',                     hi: '\u0928\u093F\u092C\u0902\u0927',                    paperEn: '',          paperHi: '',          code: 'XXX-X-ESS',   time: 3, marks: 250 },
+            opt1:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper I',   paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I',   code: 'XXX-X-OPT',   time: 3, marks: 250 },
+            opt2:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-OPT',   time: 3, marks: 250 }
+        };
+
+        function getSelectedPaper() {
+            return PAPERS[document.getElementById('paperSelect').value] || PAPERS.gs1;
+        }
+
         var PG = {
             W: 210,
             H: 297,
             margin: { top: 12, bottom: 14, left: 15, right: 8 },
             qColW: 14,
             rightMarginW: 26,
-            paperCode: 'XXX-X-GSI',
             pages: { 10: 2, 15: 3, 20: 4 }
         };
 
@@ -788,13 +814,19 @@
             var doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
             registerFonts(doc);
 
+            var paper = getSelectedPaper();
             var includeInstr = document.getElementById('includeInstructions').checked;
             var isFirstPage = true;
 
+            var answerPages = 0;
+            for (var qi = 0; qi < questions.length; qi++) {
+                answerPages += PG.pages[questions[qi].marks] || 2;
+            }
+
             if (includeInstr) {
-                drawCoverPage(doc);
+                drawCoverPage(doc, paper, answerPages);
                 doc.addPage();
-                drawImportantInstructionsPage(doc);
+                drawImportantInstructionsPage(doc, paper);
                 isFirstPage = false;
             }
 
@@ -826,7 +858,7 @@
                             item.qno, item.wordLimit, cL, qLineX, mLineX, cR, cT);
                     }
 
-                    drawFooter(doc, totalPages, item.marks);
+                    drawFooter(doc, totalPages, paper);
                 }
             }
 
@@ -834,12 +866,13 @@
             return doc;
         }
 
-        function drawCoverPage(doc) {
+        function drawCoverPage(doc, paper, answerPages) {
             var W = PG.W, H = PG.H;
             var mL = 14, mR = 14;
             var cx = W / 2;
             var rX = W - mR;
             var y;
+            var totalBookletPages = answerPages + 2;
 
             doc.setDrawColor(0);
             doc.setLineWidth(0.4);
@@ -849,21 +882,25 @@
             doc.setFont('times', 'bold');
             doc.setFontSize(11);
             doc.setTextColor(0);
-            doc.text(PG.paperCode + '/20', rX - 8, 18, { align: 'right' });
+            doc.text(paper.code + '/20', rX - 8, 18, { align: 'right' });
             doc.rect(rX - 36, 13, 34, 7);
 
             if (fontsReady) {
                 doc.setFont('NotoDevBold', 'normal');
                 doc.setFontSize(14);
-                doc.text('\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', cx + 10, 22, { align: 'center' });
-                doc.setFontSize(13);
-                doc.text('\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I', cx + 10, 28, { align: 'center' });
+                doc.text(paper.hi, cx + 10, 22, { align: 'center' });
+                if (paper.paperHi) {
+                    doc.setFontSize(13);
+                    doc.text(paper.paperHi, cx + 10, 28, { align: 'center' });
+                }
             }
             doc.setFont('times', 'bold');
             doc.setFontSize(13);
-            doc.text('GENERAL STUDIES', cx + 10, 34, { align: 'center' });
-            doc.setFontSize(12);
-            doc.text('Paper I', cx + 10, 40, { align: 'center' });
+            doc.text(paper.en, cx + 10, 34, { align: 'center' });
+            if (paper.paperEn) {
+                doc.setFontSize(12);
+                doc.text(paper.paperEn, cx + 10, 40, { align: 'center' });
+            }
 
             doc.setFont('times', 'normal');
             doc.setFontSize(8);
@@ -879,24 +916,27 @@
                 doc.text('\u0915\u093E\u0930\u094D\u092F\u093E\u0932\u092F \u0915\u0947 \u092A\u094D\u0930\u092F\u094B\u0917 \u0939\u0947\u0924\u0941', rX - 18, 14, { align: 'center' });
             }
 
+            var timeHi = { 1: '\u090F\u0915 \u0918\u0902\u091F\u093E', 2: '\u0926\u094B \u0918\u0902\u091F\u0947', 3: '\u0924\u0940\u0928 \u0918\u0902\u091F\u0947' };
+            var timeEn = { 1: 'One Hour', 2: 'Two Hours', 3: 'Three Hours' };
+
             y = 48;
             if (fontsReady) {
                 doc.setFont('NotoDevReg', 'normal');
                 doc.setFontSize(9);
-                doc.text('\u0928\u093F\u0930\u094D\u0927\u093E\u0930\u093F\u0924 \u0938\u092E\u092F : \u0924\u0940\u0928 \u0918\u0902\u091F\u0947', mL, y);
+                doc.text('\u0928\u093F\u0930\u094D\u0927\u093E\u0930\u093F\u0924 \u0938\u092E\u092F : ' + (timeHi[paper.time] || paper.time + ' \u0918\u0902\u091F\u0947'), mL, y);
             }
             doc.setFont('times', 'italic');
             doc.setFontSize(9);
-            doc.text('Time Allowed : Three Hours', mL, y + 4.5);
+            doc.text('Time Allowed : ' + (timeEn[paper.time] || paper.time + ' Hours'), mL, y + 4.5);
 
             if (fontsReady) {
                 doc.setFont('NotoDevReg', 'normal');
                 doc.setFontSize(9);
-                doc.text('\u0905\u0927\u093F\u0915\u0924\u092E \u0905\u0902\u0915 : 250', rX, y, { align: 'right' });
+                doc.text('\u0905\u0927\u093F\u0915\u0924\u092E \u0905\u0902\u0915 : ' + paper.marks, rX, y, { align: 'right' });
             }
             doc.setFont('times', 'italic');
             doc.setFontSize(9);
-            doc.text('Maximum Marks : 250', rX, y + 4.5, { align: 'right' });
+            doc.text('Maximum Marks : ' + paper.marks, rX, y + 4.5, { align: 'right' });
 
             y = 60;
             doc.setLineWidth(0.2);
@@ -911,7 +951,7 @@
 
             y += 6;
             var hindiInstr = [
-                '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 (\u0915\u094D\u092F\u0942.\u0938\u0940.\u090F.) \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 60+4 \u092A\u0943\u0937\u094D\u0920 \u0939\u0948\u0902 \u0964 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930, \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u0915\u0947 \u0905\u0902\u0924 \u092E\u0947\u0902 \u0938\u0902\u0932\u0917\u094D\u0928 \u0939\u0948, \u091C\u094B \u0905\u0932\u0917 (\u0935\u093F\u092F\u094B\u091C\u094D\u092F) \u0915\u093F\u092F\u093E \u091C\u093E \u0938\u0915\u0924\u093E \u0939\u0948 \u0914\u0930 \u0909\u092E\u094D\u092E\u0940\u0926\u0935\u093E\u0930 \u092A\u0930\u0940\u0915\u094D\u0937\u093E \u0915\u0947 \u0909\u092A\u0930\u093E\u0902\u0924 \u0905\u092A\u0928\u0947 \u0938\u093E\u0925 \u0932\u0947 \u091C\u093E \u0938\u0915\u0924\u0947 \u0939\u0948\u0902 \u0964',
+                '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 (\u0915\u094D\u092F\u0942.\u0938\u0940.\u090F.) \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 ' + totalBookletPages + ' \u092A\u0943\u0937\u094D\u0920 \u0939\u0948\u0902 \u0964 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930, \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u0915\u0947 \u0905\u0902\u0924 \u092E\u0947\u0902 \u0938\u0902\u0932\u0917\u094D\u0928 \u0939\u0948, \u091C\u094B \u0905\u0932\u0917 (\u0935\u093F\u092F\u094B\u091C\u094D\u092F) \u0915\u093F\u092F\u093E \u091C\u093E \u0938\u0915\u0924\u093E \u0939\u0948 \u0914\u0930 \u0909\u092E\u094D\u092E\u0940\u0926\u0935\u093E\u0930 \u092A\u0930\u0940\u0915\u094D\u0937\u093E \u0915\u0947 \u0909\u092A\u0930\u093E\u0902\u0924 \u0905\u092A\u0928\u0947 \u0938\u093E\u0925 \u0932\u0947 \u091C\u093E \u0938\u0915\u0924\u0947 \u0939\u0948\u0902 \u0964',
                 '\u0930\u092B \u0915\u093E\u0930\u094D\u092F \u0915\u0947 \u0932\u093F\u090F, \u0907\u0938 \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u0915\u0947 \u0905\u0902\u0924 \u092E\u0947\u0902 \u0916\u093E\u0932\u0940 \u092A\u0943\u0937\u094D\u0920 \u0926\u093F\u090F \u0917\u090F \u0939\u0948\u0902 \u0964',
                 '\u0915\u0943\u092A\u092F\u093E \u092F\u0939 \u091C\u093E\u0901\u091A \u0915\u0930 \u0932\u0947\u0902 \u0915\u093F \u0907\u0938 \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 \u0915\u094B\u0908 \u0915\u092E\u0940 \u0928 \u0939\u094B, \u0915\u094B\u0908 \u092A\u0943\u0937\u094D\u0920 \u092B\u091F\u093E \u0939\u0941\u0906 \u0928 \u0939\u094B \u0905\u0925\u0935\u093E \u0917\u093E\u092F\u092C \u0906\u0926\u093F \u0928 \u0939\u094B \u0964 \u0910\u0938\u093E \u0939\u094B, \u0924\u094B \u0907\u0938\u0915\u0947 \u092C\u0926\u0932\u0947 \u0928\u0908 \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092A\u094D\u0930\u093E\u092A\u094D\u0924 \u0915\u0930 \u0932\u0947\u0902 \u0964'
             ];
@@ -934,7 +974,7 @@
             doc.setFont('times', 'italic');
             doc.setFontSize(8.5);
             var engInstr = [
-                'This Question-cum-Answer (QCA) Booklet contains 60+4 pages. Question Paper in detachable form is available at the end of the QCA Booklet which can be taken away by the candidates after the examination.',
+                'This Question-cum-Answer (QCA) Booklet contains ' + totalBookletPages + ' pages. Question Paper in detachable form is available at the end of the QCA Booklet which can be taken away by the candidates after the examination.',
                 'For rough work, blank pages have been provided at the end of this Booklet.',
                 'Please check that this QCA Booklet does not have any shortcomings, torn or missing pages, etc. If so, get it replaced with a fresh QCA Booklet.'
             ];
@@ -1030,15 +1070,19 @@
             if (fontsReady) {
                 doc.setFont('NotoDevBold', 'normal');
                 doc.setFontSize(11);
-                doc.text('\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', sec2cx, sec2Top + 9, { align: 'center' });
-                doc.setFontSize(10);
-                doc.text('\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I', sec2cx, sec2Top + 14, { align: 'center' });
+                doc.text(paper.hi, sec2cx, sec2Top + 9, { align: 'center' });
+                if (paper.paperHi) {
+                    doc.setFontSize(10);
+                    doc.text(paper.paperHi, sec2cx, sec2Top + 14, { align: 'center' });
+                }
             }
             doc.setFont('times', 'bold');
             doc.setFontSize(11);
-            doc.text('GENERAL STUDIES', sec2cx, sec2Top + 20, { align: 'center' });
-            doc.setFontSize(10);
-            doc.text('Paper I', sec2cx, sec2Top + 25, { align: 'center' });
+            doc.text(paper.en, sec2cx, sec2Top + 20, { align: 'center' });
+            if (paper.paperEn) {
+                doc.setFontSize(10);
+                doc.text(paper.paperEn, sec2cx, sec2Top + 25, { align: 'center' });
+            }
 
             doc.line(formMidX, sec2Top, formMidX, sec2Top + sec2H);
             if (fontsReady) {
@@ -1088,11 +1132,11 @@
 
             doc.setFont('times', 'normal');
             doc.setFontSize(10);
-            doc.text(PG.paperCode + '/20', mL, H - 10);
+            doc.text(paper.code + '/' + paper.marks, mL, H - 10);
             doc.text('1', cx, H - 10, { align: 'center' });
         }
 
-        function drawImportantInstructionsPage(doc) {
+        function drawImportantInstructionsPage(doc, paper) {
             var W = PG.W, H = PG.H;
             var mL = 14, mR = 14;
             var rX = W - mR;
@@ -1224,7 +1268,7 @@
 
             doc.setFont('times', 'normal');
             doc.setFontSize(10);
-            doc.text(PG.paperCode + '/20', mL, H - 10);
+            doc.text(paper.code + '/' + paper.marks, mL, H - 10);
             doc.text('2', W / 2, H - 10, { align: 'center' });
         }
 
@@ -1311,12 +1355,12 @@
             doc.text(String(marks), textX + maxW, lastLineY, { align: 'right' });
         }
 
-        function drawFooter(doc, pageNum, marks) {
+        function drawFooter(doc, pageNum, paper) {
             var footerY = PG.H - PG.margin.bottom + 8;
             doc.setFont('times', 'normal');
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            doc.text(PG.paperCode + '/' + marks, PG.margin.left, footerY);
+            doc.text(paper.code + '/' + paper.marks, PG.margin.left, footerY);
             doc.text(String(pageNum), PG.W / 2, footerY, { align: 'center' });
         }
 
