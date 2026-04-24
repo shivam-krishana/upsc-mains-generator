@@ -523,13 +523,15 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="timeAllowed">Time Allowed (hours)</label>
-                <select id="timeAllowed">
-                    <option value="1">1 Hour</option>
-                    <option value="2">2 Hours</option>
-                    <option value="3" selected>3 Hours</option>
-                </select>
+            <div class="row-2">
+                <div class="form-group">
+                    <label for="timeHours">Time — Hours</label>
+                    <input type="number" id="timeHours" value="3" min="0" max="6">
+                </div>
+                <div class="form-group">
+                    <label for="timeMins">Minutes</label>
+                    <input type="number" id="timeMins" value="0" min="0" max="59">
+                </div>
             </div>
 
             <div id="questionsContainer"></div>
@@ -620,19 +622,37 @@
             opt2:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-OPT'   }
         };
 
+        function formatTimeEn(h, m) {
+            var parts = [];
+            if (h > 0) parts.push(h === 1 ? 'One Hour' : h === 2 ? 'Two Hours' : h === 3 ? 'Three Hours' : h === 4 ? 'Four Hours' : h === 5 ? 'Five Hours' : h === 6 ? 'Six Hours' : h + ' Hours');
+            if (m > 0) parts.push(m === 30 ? 'Thirty Minutes' : m === 15 ? 'Fifteen Minutes' : m === 45 ? 'Forty Five Minutes' : m + ' Minutes');
+            return parts.join(' ') || '0 Minutes';
+        }
+
+        function formatTimeHi(h, m) {
+            var hWords = { 0: '', 1: '\u090F\u0915 \u0918\u0902\u091F\u093E', 2: '\u0926\u094B \u0918\u0902\u091F\u0947', 3: '\u0924\u0940\u0928 \u0918\u0902\u091F\u0947', 4: '\u091A\u093E\u0930 \u0918\u0902\u091F\u0947', 5: '\u092A\u093E\u0901\u091A \u0918\u0902\u091F\u0947', 6: '\u091B\u0939 \u0918\u0902\u091F\u0947' };
+            var parts = [];
+            if (h > 0) parts.push(hWords[h] || h + ' \u0918\u0902\u091F\u0947');
+            if (m > 0) parts.push(m + ' \u092E\u093F\u0928\u091F');
+            return parts.join(' ') || '0 \u092E\u093F\u0928\u091F';
+        }
+
         function getSelectedPaper(questions) {
             var base = PAPERS[document.getElementById('paperSelect').value] || PAPERS.gs1;
             var totalMarks = 0;
             for (var i = 0; i < questions.length; i++) {
                 totalMarks += questions[i].marks;
             }
+            var h = parseInt(document.getElementById('timeHours').value, 10) || 0;
+            var m = parseInt(document.getElementById('timeMins').value, 10) || 0;
             return {
                 en: base.en,
                 hi: base.hi,
                 paperEn: base.paperEn,
                 paperHi: base.paperHi,
                 code: base.code,
-                time: parseInt(document.getElementById('timeAllowed').value, 10),
+                timeEn: formatTimeEn(h, m),
+                timeHi: formatTimeHi(h, m),
                 marks: totalMarks
             };
         }
@@ -938,18 +958,15 @@
                 doc.text('\u0915\u093E\u0930\u094D\u092F\u093E\u0932\u092F \u0915\u0947 \u092A\u094D\u0930\u092F\u094B\u0917 \u0939\u0947\u0924\u0941', rX - 18, 14, { align: 'center' });
             }
 
-            var timeHi = { 1: '\u090F\u0915 \u0918\u0902\u091F\u093E', 2: '\u0926\u094B \u0918\u0902\u091F\u0947', 3: '\u0924\u0940\u0928 \u0918\u0902\u091F\u0947' };
-            var timeEn = { 1: 'One Hour', 2: 'Two Hours', 3: 'Three Hours' };
-
             y = 48;
             if (fontsReady) {
                 doc.setFont('NotoDevReg', 'normal');
                 doc.setFontSize(9);
-                doc.text('\u0928\u093F\u0930\u094D\u0927\u093E\u0930\u093F\u0924 \u0938\u092E\u092F : ' + (timeHi[paper.time] || paper.time + ' \u0918\u0902\u091F\u0947'), mL, y);
+                doc.text('\u0928\u093F\u0930\u094D\u0927\u093E\u0930\u093F\u0924 \u0938\u092E\u092F : ' + paper.timeHi, mL, y);
             }
             doc.setFont('times', 'italic');
             doc.setFontSize(9);
-            doc.text('Time Allowed : ' + (timeEn[paper.time] || paper.time + ' Hours'), mL, y + 4.5);
+            doc.text('Time Allowed : ' + paper.timeEn, mL, y + 4.5);
 
             if (fontsReady) {
                 doc.setFont('NotoDevReg', 'normal');
