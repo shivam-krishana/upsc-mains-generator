@@ -523,6 +523,15 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="timeAllowed">Time Allowed (hours)</label>
+                <select id="timeAllowed">
+                    <option value="1">1 Hour</option>
+                    <option value="2">2 Hours</option>
+                    <option value="3" selected>3 Hours</option>
+                </select>
+            </div>
+
             <div id="questionsContainer"></div>
 
             <button class="btn-add-q" id="btnAddQ" onclick="addQuestion()">
@@ -602,17 +611,30 @@
         var fontsReady = false;
 
         var PAPERS = {
-            gs1:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper I',   paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I',   code: 'XXX-X-GSI',   time: 3, marks: 250 },
-            gs2:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-GSII',  time: 3, marks: 250 },
-            gs3:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper III', paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 III', code: 'XXX-X-GSIII', time: 3, marks: 250 },
-            gs4:   { en: 'GENERAL STUDIES (Ethics)',  hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928 (\u0928\u0940\u0924\u093F\u0936\u093E\u0938\u094D\u0924\u094D\u0930)', paperEn: 'Paper IV', paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 IV', code: 'XXX-X-GSIV', time: 3, marks: 250 },
-            essay: { en: 'ESSAY',                     hi: '\u0928\u093F\u092C\u0902\u0927',                    paperEn: '',          paperHi: '',          code: 'XXX-X-ESS',   time: 3, marks: 250 },
-            opt1:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper I',   paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I',   code: 'XXX-X-OPT',   time: 3, marks: 250 },
-            opt2:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-OPT',   time: 3, marks: 250 }
+            gs1:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper I',   paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I',   code: 'XXX-X-GSI'   },
+            gs2:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-GSII'  },
+            gs3:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper III', paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 III', code: 'XXX-X-GSIII' },
+            gs4:   { en: 'GENERAL STUDIES (Ethics)',  hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928 (\u0928\u0940\u0924\u093F\u0936\u093E\u0938\u094D\u0924\u094D\u0930)', paperEn: 'Paper IV', paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 IV', code: 'XXX-X-GSIV' },
+            essay: { en: 'ESSAY',                     hi: '\u0928\u093F\u092C\u0902\u0927',                    paperEn: '',          paperHi: '',          code: 'XXX-X-ESS'   },
+            opt1:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper I',   paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I',   code: 'XXX-X-OPT'   },
+            opt2:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-OPT'   }
         };
 
-        function getSelectedPaper() {
-            return PAPERS[document.getElementById('paperSelect').value] || PAPERS.gs1;
+        function getSelectedPaper(questions) {
+            var base = PAPERS[document.getElementById('paperSelect').value] || PAPERS.gs1;
+            var totalMarks = 0;
+            for (var i = 0; i < questions.length; i++) {
+                totalMarks += questions[i].marks;
+            }
+            return {
+                en: base.en,
+                hi: base.hi,
+                paperEn: base.paperEn,
+                paperHi: base.paperHi,
+                code: base.code,
+                time: parseInt(document.getElementById('timeAllowed').value, 10),
+                marks: totalMarks
+            };
         }
 
         var PG = {
@@ -814,7 +836,7 @@
             var doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
             registerFonts(doc);
 
-            var paper = getSelectedPaper();
+            var paper = getSelectedPaper(questions);
             var includeInstr = document.getElementById('includeInstructions').checked;
             var isFirstPage = true;
 
@@ -882,7 +904,7 @@
             doc.setFont('times', 'bold');
             doc.setFontSize(11);
             doc.setTextColor(0);
-            doc.text(paper.code + '/20', rX - 8, 18, { align: 'right' });
+            doc.text(paper.code + '/' + paper.marks, rX - 8, 18, { align: 'right' });
             doc.rect(rX - 36, 13, 34, 7);
 
             if (fontsReady) {
