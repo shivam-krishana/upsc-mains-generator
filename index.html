@@ -229,6 +229,133 @@
             min-height: 60px;
         }
 
+        .subparts-wrap {
+            margin-top: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .subparts-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .subpart-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem 0.7rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subpart-card .subpart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+
+        .subpart-card .subpart-tag {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--navy-light);
+        }
+
+        .btn-remove-sp {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: color 0.15s, background 0.15s;
+            line-height: 1;
+        }
+
+        .btn-remove-sp:hover {
+            color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .subpart-card textarea {
+            width: 100%;
+            min-height: 50px;
+            padding: 0.55rem 0.7rem;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            resize: vertical;
+            line-height: 1.55;
+            color: var(--text);
+            display: block;
+        }
+
+        .subpart-card textarea:focus {
+            outline: none;
+            border-color: var(--navy-light);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        .subpart-card .sp-marks {
+            margin-top: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .subpart-card .sp-marks .sp-marks-val {
+            width: 80px;
+            padding: 0.4rem 0.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            text-align: center;
+            background: #fff;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .subpart-card .sp-marks .sp-marks-val:focus {
+            outline: none;
+            border-color: var(--navy-light);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        .btn-add-subpart {
+            width: 100%;
+            padding: 0.45rem;
+            background: transparent;
+            border: 1.5px dashed var(--border);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+
+        .btn-add-subpart:hover {
+            border-color: var(--navy-light);
+            color: var(--navy-light);
+            background: #f5f8ff;
+        }
+
         .toggle-row {
             display: flex;
             align-items: center;
@@ -554,6 +681,11 @@
                 <input type="number" id="roughPageCount" value="4" min="1" max="20" style="width:56px; margin-left:auto; padding:0.4rem 0.5rem; border:2px solid var(--border); border-radius:8px; font-size:0.85rem; font-family:inherit; text-align:center;">
             </div>
 
+            <label class="toggle-row">
+                <input type="checkbox" id="includeQuestionPaper">
+                <span>Include detachable question paper</span>
+            </label>
+
             <button class="btn-generate" id="btnGenerate" onclick="handleGenerate()">
                 Generate Answer Sheet
             </button>
@@ -630,6 +762,25 @@
             opt2:  { en: 'OPTIONAL SUBJECT',          hi: '\u0935\u0948\u0915\u0932\u094D\u092A\u093F\u0915 \u0935\u093F\u0937\u092F',       paperEn: 'Paper II',  paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 II',  code: 'XXX-X-OPT'   }
         };
 
+        var PAPER_CAPS = {
+            gs1:   { sections: true,  subparts: false },
+            gs2:   { sections: true,  subparts: false },
+            gs3:   { sections: true,  subparts: false },
+            gs4:   { sections: true,  subparts: false },
+            essay: { sections: true,  subparts: false },
+            opt1:  { sections: true,  subparts: true  },
+            opt2:  { sections: true,  subparts: true  }
+        };
+
+        function getCurrentCaps() {
+            return PAPER_CAPS[document.getElementById('paperSelect').value] || { sections: false, subparts: false };
+        }
+
+        var SECTION_LABELS = {
+            'A': { en: 'SECTION A', hi: '\u0916\u0902\u0921 \u0915' },
+            'B': { en: 'SECTION B', hi: '\u0916\u0902\u0921 \u0916' }
+        };
+
         function formatTimeEn(h, m) {
             var parts = [];
             if (h > 0) parts.push(h === 1 ? 'One Hour' : h === 2 ? 'Two Hours' : h === 3 ? 'Three Hours' : h === 4 ? 'Four Hours' : h === 5 ? 'Five Hours' : h === 6 ? 'Six Hours' : h + ' Hours');
@@ -649,7 +800,7 @@
             var base = PAPERS[document.getElementById('paperSelect').value] || PAPERS.gs1;
             var totalMarks = 0;
             for (var i = 0; i < questions.length; i++) {
-                totalMarks += questions[i].marks;
+                totalMarks += getEffectiveMarks(questions[i]);
             }
             var h = parseInt(document.getElementById('timeHours').value, 10) || 0;
             var m = parseInt(document.getElementById('timeMins').value, 10) || 0;
@@ -671,7 +822,7 @@
             margin: { top: 12, bottom: 14, left: 15, right: 8 },
             qColW: 14,
             rightMarginW: 26,
-            pages: { 10: 2, 15: 3, 20: 4, 125: 12 }
+            pages: { 5: 1, 10: 2, 15: 3, 20: 4, 25: 5, 30: 6, 40: 8, 50: 10, 60: 12, 125: 12 }
         };
 
         function bufToBase64(buf) {
@@ -785,10 +936,79 @@
                     '<div class="form-group"><label>Q No.</label>' +
                         '<input type="number" class="q-no" value="' + questionCounter + '" min="1" max="99">' +
                     '</div>' +
+                '</div>' +
+                '<div class="form-group q-section-wrap" style="display:none;">' +
+                    '<label>Section</label>' +
+                    '<select class="q-section">' +
+                        '<option value="">\u2014 None \u2014</option>' +
+                        '<option value="A">Section A</option>' +
+                        '<option value="B">Section B</option>' +
+                    '</select>' +
+                '</div>' +
+                '<div class="subparts-wrap" style="display:none;">' +
+                    '<label class="subparts-label">Subparts</label>' +
+                    '<div class="subparts-list"></div>' +
+                    '<button type="button" class="btn-add-subpart" onclick="addSubpart(this)">' +
+                        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                        'Add subpart' +
+                    '</button>' +
                 '</div>';
             container.appendChild(card);
             renumberQuestions();
             updateRemoveButtons();
+            applyCapsToCard(card);
+        }
+
+        function addSubpart(btn) {
+            var card = btn.closest('.question-card');
+            var list = card.querySelector('.subparts-list');
+            var sp = document.createElement('div');
+            sp.className = 'subpart-card';
+            sp.innerHTML =
+                '<div class="subpart-header">' +
+                    '<span class="subpart-tag">Subpart <span class="sp-letter"></span></span>' +
+                    '<button class="btn-remove-sp" onclick="removeSubpart(this)" title="Remove subpart">' +
+                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                    '</button>' +
+                '</div>' +
+                '<textarea class="sp-text" placeholder="Subpart text..."></textarea>' +
+                '<div class="sp-marks">' +
+                    '<span>Marks</span>' +
+                    '<select class="sp-marks-val">' +
+                        '<option value="10">10</option>' +
+                        '<option value="15" selected>15</option>' +
+                        '<option value="20">20</option>' +
+                    '</select>' +
+                '</div>';
+            list.appendChild(sp);
+            renumberSubparts(card);
+        }
+
+        function removeSubpart(btn) {
+            var card = btn.closest('.question-card');
+            btn.closest('.subpart-card').remove();
+            renumberSubparts(card);
+        }
+
+        function renumberSubparts(card) {
+            var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+            var sps = card.querySelectorAll('.subpart-card');
+            sps.forEach(function (sp, i) {
+                var tag = sp.querySelector('.sp-letter');
+                if (tag) tag.textContent = '(' + (letters[i] || (i + 1)) + ')';
+            });
+        }
+
+        function applyCapsToCard(card) {
+            var caps = getCurrentCaps();
+            var secWrap = card.querySelector('.q-section-wrap');
+            var spWrap = card.querySelector('.subparts-wrap');
+            if (secWrap) secWrap.style.display = caps.sections ? '' : 'none';
+            if (spWrap) spWrap.style.display = caps.subparts ? '' : 'none';
+        }
+
+        function applyCapsToAllCards() {
+            document.querySelectorAll('.question-card').forEach(applyCapsToCard);
         }
 
         function removeQuestion(btn) {
@@ -835,16 +1055,41 @@
         }
 
         function collectQuestions() {
+            var caps = getCurrentCaps();
             var cards = document.querySelectorAll('.question-card');
             var questions = [];
             for (var i = 0; i < cards.length; i++) {
-                var text = cards[i].querySelector('.q-text').value.trim();
-                if (!text) continue;
+                var card = cards[i];
+                var text = card.querySelector('.q-text').value.trim();
+
+                var subparts = [];
+                if (caps.subparts) {
+                    var sps = card.querySelectorAll('.subpart-card');
+                    sps.forEach(function (sp) {
+                        var spText = sp.querySelector('.sp-text').value.trim();
+                        if (!spText) return;
+                        subparts.push({
+                            text: spText,
+                            marks: parseInt(sp.querySelector('.sp-marks-val').value, 10) || 0
+                        });
+                    });
+                }
+
+                if (!text && subparts.length === 0) continue;
+
+                var section = '';
+                if (caps.sections) {
+                    var secEl = card.querySelector('.q-section');
+                    if (secEl) section = secEl.value || '';
+                }
+
                 questions.push({
                     text: text,
-                    marks: parseInt(cards[i].querySelector('.q-marks').value, 10),
-                    wordLimit: parseInt(cards[i].querySelector('.q-wl').value, 10),
-                    qno: parseInt(cards[i].querySelector('.q-no').value, 10) || (i + 1)
+                    marks: parseInt(card.querySelector('.q-marks').value, 10),
+                    wordLimit: parseInt(card.querySelector('.q-wl').value, 10),
+                    qno: parseInt(card.querySelector('.q-no').value, 10) || (i + 1),
+                    section: section,
+                    subparts: subparts
                 });
             }
             return questions;
@@ -864,18 +1109,35 @@
             btn.textContent = 'Translating & Generating...';
 
             try {
-                var translations = await Promise.all(
-                    questions.map(function (q) { return translateToHindi(q.text); })
-                );
+                var qPromises = questions.map(function (q) {
+                    return q.text ? translateToHindi(q.text) : Promise.resolve(null);
+                });
+                var translations = await Promise.all(qPromises);
                 for (var i = 0; i < questions.length; i++) {
                     questions[i].hindi = translations[i];
+                }
+
+                var allTranslated = translations.every(function (t, idx) {
+                    return !questions[idx].text || t !== null;
+                });
+
+                for (var qi = 0; qi < questions.length; qi++) {
+                    var subs = questions[qi].subparts || [];
+                    if (subs.length === 0) continue;
+                    var subPromises = subs.map(function (sp) {
+                        return sp.text ? translateToHindi(sp.text) : Promise.resolve(null);
+                    });
+                    var subTrans = await Promise.all(subPromises);
+                    for (var si = 0; si < subs.length; si++) {
+                        subs[si].hindi = subTrans[si];
+                        if (subs[si].text && subTrans[si] === null) allTranslated = false;
+                    }
                 }
 
                 var doc = generateSheet(questions);
                 currentDoc = doc;
                 showPreview(doc);
 
-                var allTranslated = translations.every(function (t) { return t !== null; });
                 if (allTranslated) {
                     showToast(questions.length + ' question' + (questions.length > 1 ? 's' : '') + ' generated with Hindi');
                 } else {
@@ -908,7 +1170,7 @@
 
             var answerPages = 0;
             for (var qi = 0; qi < questions.length; qi++) {
-                answerPages += PG.pages[questions[qi].marks] || 2;
+                answerPages += getPagesForMarks(getEffectiveMarks(questions[qi]));
             }
             var includeRoughForCount = document.getElementById('includeRough').checked;
             var roughCountForTotal = includeRoughForCount ? (parseInt(document.getElementById('roughPageCount').value, 10) || 4) : 0;
@@ -916,8 +1178,9 @@
 
             var bookletNo = generateBookletNo();
 
+            var includeQPForCover = document.getElementById('includeQuestionPaper').checked;
             if (includeInstr) {
-                drawCoverPage(doc, paper, totalBookletPages, bookletNo);
+                drawCoverPage(doc, paper, totalBookletPages, bookletNo, includeQPForCover);
                 doc.addPage();
                 drawImportantInstructionsPage(doc, paper);
                 isFirstPage = false;
@@ -936,22 +1199,45 @@
 
             for (var q = 0; q < questions.length; q++) {
                 var item = questions[q];
-                var numPages = PG.pages[item.marks] || 2;
+                var hasSubparts = item.subparts && item.subparts.length > 0;
 
-                for (var p = 0; p < numPages; p++) {
-                    if (!isFirstPage) doc.addPage();
-                    isFirstPage = false;
-                    totalPages++;
+                if (hasSubparts) {
+                    for (var si = 0; si < item.subparts.length; si++) {
+                        var sp = item.subparts[si];
+                        var spPages = getPagesForMarks(sp.marks);
 
-                    drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB);
-                    drawMarginText(doc, mLineX, cR, cT, cB);
+                        for (var sp_p = 0; sp_p < spPages; sp_p++) {
+                            if (!isFirstPage) doc.addPage();
+                            isFirstPage = false;
+                            totalPages++;
 
-                    if (p === 0) {
-                        drawQuestion(doc, item.text, item.hindi, item.marks,
-                            item.qno, item.wordLimit, cL, qLineX, mLineX, cR, cT);
+                            drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB);
+                            drawMarginText(doc, mLineX, cR, cT, cB);
+
+                            if (sp_p === 0) {
+                                drawSubpartFirstPage(doc, item, si, si === 0, cL, qLineX, mLineX, cR, cT);
+                            }
+
+                            drawFooter(doc, totalPages, paper);
+                        }
                     }
+                } else {
+                    var numPages = getPagesForMarks(item.marks);
 
-                    drawFooter(doc, totalPages, paper);
+                    for (var p = 0; p < numPages; p++) {
+                        if (!isFirstPage) doc.addPage();
+                        isFirstPage = false;
+                        totalPages++;
+
+                        drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB);
+                        drawMarginText(doc, mLineX, cR, cT, cB);
+
+                        if (p === 0) {
+                            drawQuestion(doc, item, cL, qLineX, mLineX, cR, cT);
+                        }
+
+                        drawFooter(doc, totalPages, paper);
+                    }
                 }
             }
 
@@ -965,8 +1251,34 @@
                 }
             }
 
-            generatedPageCount = totalPages;
+            var qpPagesAdded = 0;
+            var includeQP = document.getElementById('includeQuestionPaper').checked;
+            if (includeQP) {
+                doc.addPage();
+                drawQPCoverPage(doc, paper, bookletNo);
+
+                doc.addPage();
+                drawQPInstructionsPage(doc, paper, questions);
+
+                doc.addPage();
+                var lastQpPage = drawQPQuestionsPages(doc, paper, questions, 3);
+                qpPagesAdded = lastQpPage;
+            }
+
+            generatedPageCount = totalPages + qpPagesAdded;
             return doc;
+        }
+
+        function getEffectiveMarks(item) {
+            if (item.subparts && item.subparts.length > 0) {
+                return item.subparts.reduce(function (s, sp) { return s + (sp.marks || 0); }, 0);
+            }
+            return item.marks;
+        }
+
+        function getPagesForMarks(marks) {
+            if (PG.pages[marks]) return PG.pages[marks];
+            return Math.max(2, Math.ceil(marks / 5));
         }
 
         function generateBookletNo() {
@@ -995,7 +1307,7 @@
             }
         }
 
-        function drawCoverPage(doc, paper, answerPages, bookletNo) {
+        function drawCoverPage(doc, paper, answerPages, bookletNo, includeQP) {
             var W = PG.W, H = PG.H;
             var mL = 14, mR = 14;
             var cx = W / 2;
@@ -1074,8 +1386,11 @@
             }
 
             y += 6;
+            var hindiFirst = includeQP
+                ? '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 (\u0915\u094D\u092F\u0942.\u0938\u0940.\u090F.) \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 ' + totalBookletPages + ' \u092A\u0943\u0937\u094D\u0920 \u0939\u0948\u0902 \u0964 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930, \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u0915\u0947 \u0905\u0902\u0924 \u092E\u0947\u0902 \u0938\u0902\u0932\u0917\u094D\u0928 \u0939\u0948, \u091C\u094B \u0905\u0932\u0917 (\u0935\u093F\u092F\u094B\u091C\u094D\u092F) \u0915\u093F\u092F\u093E \u091C\u093E \u0938\u0915\u0924\u093E \u0939\u0948 \u0914\u0930 \u0909\u092E\u094D\u092E\u0940\u0926\u0935\u093E\u0930 \u092A\u0930\u0940\u0915\u094D\u0937\u093E \u0915\u0947 \u0909\u092A\u0930\u093E\u0902\u0924 \u0905\u092A\u0928\u0947 \u0938\u093E\u0925 \u0932\u0947 \u091C\u093E \u0938\u0915\u0924\u0947 \u0939\u0948\u0902 \u0964'
+                : '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 (\u0915\u094D\u092F\u0942.\u0938\u0940.\u090F.) \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 ' + totalBookletPages + ' \u092A\u0943\u0937\u094D\u0920 \u0939\u0948\u0902 \u0964';
             var hindiInstr = [
-                '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 (\u0915\u094D\u092F\u0942.\u0938\u0940.\u090F.) \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 ' + totalBookletPages + ' \u092A\u0943\u0937\u094D\u0920 \u0939\u0948\u0902 \u0964 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930, \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u0915\u0947 \u0905\u0902\u0924 \u092E\u0947\u0902 \u0938\u0902\u0932\u0917\u094D\u0928 \u0939\u0948, \u091C\u094B \u0905\u0932\u0917 (\u0935\u093F\u092F\u094B\u091C\u094D\u092F) \u0915\u093F\u092F\u093E \u091C\u093E \u0938\u0915\u0924\u093E \u0939\u0948 \u0914\u0930 \u0909\u092E\u094D\u092E\u0940\u0926\u0935\u093E\u0930 \u092A\u0930\u0940\u0915\u094D\u0937\u093E \u0915\u0947 \u0909\u092A\u0930\u093E\u0902\u0924 \u0905\u092A\u0928\u0947 \u0938\u093E\u0925 \u0932\u0947 \u091C\u093E \u0938\u0915\u0924\u0947 \u0939\u0948\u0902 \u0964',
+                hindiFirst,
                 '\u0930\u092B \u0915\u093E\u0930\u094D\u092F \u0915\u0947 \u0932\u093F\u090F, \u0907\u0938 \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u0915\u0947 \u0905\u0902\u0924 \u092E\u0947\u0902 \u0916\u093E\u0932\u0940 \u092A\u0943\u0937\u094D\u0920 \u0926\u093F\u090F \u0917\u090F \u0939\u0948\u0902 \u0964',
                 '\u0915\u0943\u092A\u092F\u093E \u092F\u0939 \u091C\u093E\u0901\u091A \u0915\u0930 \u0932\u0947\u0902 \u0915\u093F \u0907\u0938 \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 \u0915\u094B\u0908 \u0915\u092E\u0940 \u0928 \u0939\u094B, \u0915\u094B\u0908 \u092A\u0943\u0937\u094D\u0920 \u092B\u091F\u093E \u0939\u0941\u0906 \u0928 \u0939\u094B \u0905\u0925\u0935\u093E \u0917\u093E\u092F\u092C \u0906\u0926\u093F \u0928 \u0939\u094B \u0964 \u0910\u0938\u093E \u0939\u094B, \u0924\u094B \u0907\u0938\u0915\u0947 \u092C\u0926\u0932\u0947 \u0928\u0908 \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092A\u094D\u0930\u093E\u092A\u094D\u0924 \u0915\u0930 \u0932\u0947\u0902 \u0964'
             ];
@@ -1097,8 +1412,11 @@
             y += 5;
             doc.setFont('times', 'italic');
             doc.setFontSize(8.5);
+            var engFirst = includeQP
+                ? 'This Question-cum-Answer (QCA) Booklet contains ' + totalBookletPages + ' pages. Question Paper in detachable form is available at the end of the QCA Booklet which can be taken away by the candidates after the examination.'
+                : 'This Question-cum-Answer (QCA) Booklet contains ' + totalBookletPages + ' pages.';
             var engInstr = [
-                'This Question-cum-Answer (QCA) Booklet contains ' + totalBookletPages + ' pages. Question Paper in detachable form is available at the end of the QCA Booklet which can be taken away by the candidates after the examination.',
+                engFirst,
                 'For rough work, blank pages have been provided at the end of this Booklet.',
                 'Please check that this QCA Booklet does not have any shortcomings, torn or missing pages, etc. If so, get it replaced with a fresh QCA Booklet.'
             ];
@@ -1463,9 +1781,93 @@
             }
         }
 
-        function drawQuestion(doc, engQ, hindiQ, marks, qno, wordLimit,
-            cL, qLineX, mLineX, cR, cT) {
+        function drawQuestion(doc, item, cL, qLineX, mLineX, cR, cT) {
+            var textPad = 3;
+            var textX = qLineX + textPad;
+            var maxW = mLineX - qLineX - textPad - 2;
+            var qCx = cL + PG.qColW / 2;
+            var lineH = 5.2;
+            var y = cT + 9;
+            var hasSubparts = item.subparts && item.subparts.length > 0;
 
+            doc.setFont('times', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Q' + item.qno + '.', qCx, y, { align: 'center' });
+
+            var wlClauseHi = ' (' + item.wordLimit + ' \u0936\u092C\u094D\u0926\u094B\u0902 \u092E\u0947\u0902 \u0909\u0924\u094D\u0924\u0930 \u0926\u0940\u091C\u093F\u090F)';
+            var wlClauseEn = ' (Answer in ' + item.wordLimit + ' words)';
+
+            if (item.text) {
+                if (item.hindi && fontsReady) {
+                    var hindiText = item.hindi + (hasSubparts ? '' : wlClauseHi);
+                    doc.setFont('NotoDevReg', 'normal');
+                    doc.setFontSize(11);
+                    doc.setTextColor(0, 0, 0);
+                    var hindiWrapped = doc.splitTextToSize(hindiText, maxW);
+                    var hindiLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                    doc.text(hindiWrapped, textX, y);
+                    y += (hindiWrapped.length - 1) * hindiLeading + hindiLeading + lineH;
+                }
+
+                var engFullText = item.text + (hasSubparts ? '' : wlClauseEn);
+                doc.setFont('times', 'italic');
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                var engWrapped = doc.splitTextToSize(engFullText, maxW);
+                var engLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                doc.text(engWrapped, textX, y);
+                var stemLastY = y + (engWrapped.length - 1) * engLeading;
+
+                if (!hasSubparts) {
+                    doc.setFont('times', 'bold');
+                    doc.setFontSize(11);
+                    doc.text(String(item.marks), textX + maxW, stemLastY, { align: 'right' });
+                    return;
+                }
+
+                y = stemLastY + lineH + 1;
+            }
+
+            if (!hasSubparts) {
+                if (!item.text) {
+                    doc.setFont('times', 'bold');
+                    doc.setFontSize(11);
+                    doc.text(String(item.marks), textX + maxW, y, { align: 'right' });
+                }
+                return;
+            }
+
+            var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+            for (var si = 0; si < item.subparts.length; si++) {
+                var sp = item.subparts[si];
+                var label = '(' + (letters[si] || (si + 1)) + ')';
+
+                if (sp.hindi && fontsReady) {
+                    doc.setFont('NotoDevReg', 'normal');
+                    doc.setFontSize(11);
+                    var hiSpWrapped = doc.splitTextToSize(label + ' ' + sp.hindi, maxW);
+                    var hiSpLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                    doc.text(hiSpWrapped, textX, y);
+                    y += (hiSpWrapped.length - 1) * hiSpLeading + hiSpLeading + 1.5;
+                }
+
+                doc.setFont('times', 'italic');
+                doc.setFontSize(11);
+                var enSpWrapped = doc.splitTextToSize(label + ' ' + sp.text, maxW);
+                var enSpLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                doc.text(enSpWrapped, textX, y);
+                var spLastY = y + (enSpWrapped.length - 1) * enSpLeading;
+
+                doc.setFont('times', 'bold');
+                doc.setFontSize(11);
+                doc.text(String(sp.marks), textX + maxW, spLastY, { align: 'right' });
+
+                y = spLastY + lineH + 1;
+            }
+        }
+
+        function drawSubpartFirstPage(doc, item, si, includeStem, cL, qLineX, mLineX, cR, cT) {
             var textPad = 3;
             var textX = qLineX + textPad;
             var maxW = mLineX - qLineX - textPad - 2;
@@ -1473,35 +1875,59 @@
             var lineH = 5.2;
             var y = cT + 9;
 
+            var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+            var letter = letters[si] || (si + 1);
+            var label = String(item.qno) + '(' + letter + ')';
+
             doc.setFont('times', 'bold');
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
-            doc.text('Q' + qno + '.', qCx, y, { align: 'center' });
+            doc.text(label, qCx, y, { align: 'center' });
 
-            if (hindiQ && fontsReady) {
-                var hindiWL = ' (' + wordLimit + ' \u0936\u092C\u094D\u0926\u094B\u0902 \u092E\u0947\u0902 \u0909\u0924\u094D\u0924\u0930 \u0926\u0940\u091C\u093F\u090F)';
-                var hindiFullText = hindiQ + hindiWL;
+            if (includeStem && item.text) {
+                if (item.hindi && fontsReady) {
+                    doc.setFont('NotoDevReg', 'normal');
+                    doc.setFontSize(11);
+                    doc.setTextColor(0, 0, 0);
+                    var stemHiWrapped = doc.splitTextToSize(item.hindi, maxW);
+                    var stemHiLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                    doc.text(stemHiWrapped, textX, y);
+                    y += (stemHiWrapped.length - 1) * stemHiLeading + stemHiLeading + 1.5;
+                }
+                doc.setFont('times', 'italic');
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                var stemEnWrapped = doc.splitTextToSize(item.text, maxW);
+                var stemEnLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                doc.text(stemEnWrapped, textX, y);
+                y += (stemEnWrapped.length - 1) * stemEnLeading + stemEnLeading + lineH;
+            }
+
+            var sp = item.subparts[si];
+            var wlClauseHi = ' (' + item.wordLimit + ' \u0936\u092C\u094D\u0926\u094B\u0902 \u092E\u0947\u0902 \u0909\u0924\u094D\u0924\u0930 \u0926\u0940\u091C\u093F\u090F)';
+            var wlClauseEn = ' (Answer in ' + item.wordLimit + ' words)';
+
+            if (sp.hindi && fontsReady) {
                 doc.setFont('NotoDevReg', 'normal');
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
-                var hindiWrapped = doc.splitTextToSize(hindiFullText, maxW);
-                var hindiLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
-                doc.text(hindiWrapped, textX, y);
-                y += (hindiWrapped.length - 1) * hindiLeading + hindiLeading + lineH;
+                var hiSpWrapped = doc.splitTextToSize(sp.hindi + wlClauseHi, maxW);
+                var hiSpLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+                doc.text(hiSpWrapped, textX, y);
+                y += (hiSpWrapped.length - 1) * hiSpLeading + hiSpLeading + lineH;
             }
 
-            var engFullText = engQ + ' (Answer in ' + wordLimit + ' words)';
             doc.setFont('times', 'italic');
             doc.setFontSize(11);
             doc.setTextColor(0, 0, 0);
-            var engWrapped = doc.splitTextToSize(engFullText, maxW);
-            var engLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
-            doc.text(engWrapped, textX, y);
-            var lastLineY = y + (engWrapped.length - 1) * engLeading;
+            var enSpWrapped = doc.splitTextToSize(sp.text + wlClauseEn, maxW);
+            var enSpLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
+            doc.text(enSpWrapped, textX, y);
+            var spLastY = y + (enSpWrapped.length - 1) * enSpLeading;
 
             doc.setFont('times', 'bold');
             doc.setFontSize(11);
-            doc.text(String(marks), textX + maxW, lastLineY, { align: 'right' });
+            doc.text(String(sp.marks), textX + maxW, spLastY, { align: 'right' });
         }
 
         function drawFooter(doc, pageNum, paper) {
@@ -1511,6 +1937,423 @@
             doc.setTextColor(0, 0, 0);
             doc.text(paper.code + '/' + paper.marks, PG.margin.left, footerY);
             doc.text(String(pageNum), PG.W / 2, footerY, { align: 'center' });
+        }
+
+        function numberWord(n) {
+            var words = {
+                1: 'ONE', 2: 'TWO', 3: 'THREE', 4: 'FOUR', 5: 'FIVE',
+                6: 'SIX', 7: 'SEVEN', 8: 'EIGHT', 9: 'NINE', 10: 'TEN',
+                11: 'ELEVEN', 12: 'TWELVE', 13: 'THIRTEEN', 14: 'FOURTEEN', 15: 'FIFTEEN',
+                16: 'SIXTEEN', 17: 'SEVENTEEN', 18: 'EIGHTEEN', 19: 'NINETEEN', 20: 'TWENTY'
+            };
+            return words[n] || String(n);
+        }
+
+        function numberWordHi(n) {
+            var words = {
+                1: '\u090F\u0915', 2: '\u0926\u094B', 3: '\u0924\u0940\u0928', 4: '\u091A\u093E\u0930', 5: '\u092A\u093E\u0901\u091A',
+                6: '\u091B\u0939', 7: '\u0938\u093E\u0924', 8: '\u0906\u0920', 9: '\u0928\u094C', 10: '\u0926\u0938',
+                11: '\u0917\u094D\u092F\u093E\u0930\u0939', 12: '\u092C\u093E\u0930\u0939', 13: '\u0924\u0947\u0930\u0939', 14: '\u091A\u094C\u0926\u0939', 15: '\u092A\u0902\u0926\u094D\u0930\u0939',
+                16: '\u0938\u094B\u0932\u0939', 17: '\u0938\u0924\u094D\u0930\u0939', 18: '\u0905\u0920\u093E\u0930\u0939', 19: '\u0909\u0928\u094D\u0928\u0940\u0938', 20: '\u092C\u0940\u0938'
+            };
+            return words[n] || String(n);
+        }
+
+        function drawQPCoverPage(doc, paper, bookletNo) {
+            var W = PG.W, H = PG.H;
+            var mL = 14, mR = 14;
+            var cx = W / 2;
+            var rX = W - mR;
+            var y;
+
+            doc.setDrawColor(0);
+            doc.setTextColor(0);
+            doc.setLineWidth(0.3);
+            doc.rect(mL + 48, 12, rX - mL - 48 - 50, 30);
+            doc.setFont('times', 'bold');
+            doc.setFontSize(11);
+            doc.text(paper.code + '/QP', rX - 8, 18, { align: 'right' });
+            doc.rect(rX - 36, 13, 34, 7);
+
+            if (fontsReady) {
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(14);
+                doc.text(paper.hi, cx + 10, 22, { align: 'center' });
+                if (paper.paperHi) {
+                    doc.setFontSize(13);
+                    doc.text(paper.paperHi, cx + 10, 28, { align: 'center' });
+                }
+            }
+            doc.setFont('times', 'bold');
+            doc.setFontSize(13);
+            doc.text(paper.en, cx + 10, 34, { align: 'center' });
+            if (paper.paperEn) {
+                doc.setFontSize(12);
+                doc.text(paper.paperEn, cx + 10, 40, { align: 'center' });
+            }
+
+            doc.rect(mL + 2, 14, 36, 26);
+            drawQRCode(doc, paper.code + '/QP/' + bookletNo, mL + 7, 16, 22);
+
+            doc.setFont('times', 'normal');
+            doc.setFontSize(8);
+            doc.text('For Official Use', rX - 18, 17, { align: 'center' });
+            if (fontsReady) {
+                doc.setFont('NotoDevReg', 'normal');
+                doc.setFontSize(7);
+                doc.text('\u0915\u093E\u0930\u094D\u092F\u093E\u0932\u092F \u0915\u0947 \u092A\u094D\u0930\u092F\u094B\u0917 \u0939\u0947\u0924\u0941', rX - 18, 14, { align: 'center' });
+            }
+
+            y = 48;
+            if (fontsReady) {
+                doc.setFont('NotoDevReg', 'normal');
+                doc.setFontSize(9);
+                doc.text('\u0928\u093F\u0930\u094D\u0927\u093E\u0930\u093F\u0924 \u0938\u092E\u092F : ' + paper.timeHi, mL, y);
+            }
+            doc.setFont('times', 'italic');
+            doc.setFontSize(9);
+            doc.text('Time Allowed : ' + paper.timeEn, mL, y + 4.5);
+
+            if (fontsReady) {
+                doc.setFont('NotoDevReg', 'normal');
+                doc.setFontSize(9);
+                doc.text('\u0905\u0927\u093F\u0915\u0924\u092E \u0905\u0902\u0915 : ' + paper.marks, rX, y, { align: 'right' });
+            }
+            doc.setFont('times', 'italic');
+            doc.setFontSize(9);
+            doc.text('Maximum Marks : ' + paper.marks, rX, y + 4.5, { align: 'right' });
+
+            y = 60;
+            doc.setLineWidth(0.2);
+            doc.line(mL, y, rX, y);
+
+            var blockTop = H / 2 - 35;
+            doc.setLineWidth(0.6);
+            doc.rect(mL + 18, blockTop, rX - mL - 36, 60);
+
+            if (fontsReady) {
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(24);
+                doc.text('\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930', cx, blockTop + 20, { align: 'center' });
+            }
+            doc.setFont('times', 'bold');
+            doc.setFontSize(24);
+            doc.text('QUESTION PAPER', cx, blockTop + 36, { align: 'center' });
+
+            doc.setFont('times', 'italic');
+            doc.setFontSize(11);
+            doc.text('(Detachable)', cx, blockTop + 48, { align: 'center' });
+
+            doc.setFont('times', 'normal');
+            doc.setFontSize(9);
+            doc.text('QCA Booklet No.: ' + bookletNo, cx, blockTop + 75, { align: 'center' });
+
+            if (fontsReady) {
+                doc.setFont('NotoDevReg', 'normal');
+                doc.setFontSize(8.5);
+                doc.text('\u0928\u094B\u091F : \u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 \u0915\u094B \u092A\u0930\u0940\u0915\u094D\u0937\u093E \u0915\u0947 \u0909\u092A\u0930\u093E\u0902\u0924 \u0905\u0932\u0917 \u0915\u093F\u092F\u093E \u091C\u093E \u0938\u0915\u0924\u093E \u0939\u0948 \u0964', cx, H - 30, { align: 'center' });
+            }
+            doc.setFont('times', 'italic');
+            doc.setFontSize(9);
+            doc.text('Note: This Question Paper may be detached from the booklet after the examination.', cx, H - 24, { align: 'center' });
+
+            doc.setFont('times', 'normal');
+            doc.setFontSize(10);
+            doc.text(paper.code + '/QP', mL, H - 10);
+            doc.text('1', cx, H - 10, { align: 'center' });
+        }
+
+        function drawQPInstructionsPage(doc, paper, questions) {
+            var W = PG.W, H = PG.H;
+            var mL = 14, mR = 14;
+            var rX = W - mR;
+            var tW = rX - mL;
+            var colW = tW / 2;
+            var y = 14;
+
+            var nQ = questions.length;
+            var nWord = numberWord(nQ);
+            var nWordHi = numberWordHi(nQ);
+
+            doc.setDrawColor(0);
+            doc.setTextColor(0);
+            doc.setLineWidth(0.3);
+
+            var headerH = 14;
+            doc.rect(mL, y, tW, headerH);
+            doc.line(mL + colW, y, mL + colW, y + headerH);
+
+            if (fontsReady) {
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(13);
+                doc.text('\u0928\u093F\u0930\u094D\u0926\u0947\u0936', mL + colW / 2, y + 9, { align: 'center' });
+            }
+            doc.setFont('times', 'bold');
+            doc.setFontSize(13);
+            doc.text('INSTRUCTIONS', mL + colW + colW / 2, y + 9, { align: 'center' });
+
+            y += headerH;
+
+            var instructions = [
+                {
+                    hi: '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 \u092E\u0947\u0902 \u0939\u093F\u0928\u094D\u0926\u0940 \u090F\u0935\u0902 \u0905\u0902\u0917\u094D\u0930\u0947\u091C\u093C\u0940 \u0926\u094B\u0928\u094B\u0902 \u092E\u0947\u0902 \u0915\u0941\u0932 ' + nWordHi + ' (' + nQ + ') \u092A\u094D\u0930\u0936\u094D\u0928 \u0926\u093F\u090F \u0917\u090F \u0939\u0948\u0902 \u0964',
+                    en: 'There are ' + nWord + ' (' + nQ + ') questions printed both in HINDI and in ENGLISH.'
+                },
+                {
+                    hi: '\u0938\u092D\u0940 \u092A\u094D\u0930\u0936\u094D\u0928 \u0905\u0928\u093F\u0935\u093E\u0930\u094D\u092F \u0939\u0948\u0902 \u0964',
+                    en: 'All questions are compulsory.'
+                },
+                {
+                    hi: '\u092A\u094D\u0930\u0924\u094D\u092F\u0947\u0915 \u092A\u094D\u0930\u0936\u094D\u0928/\u092D\u093E\u0917 \u0915\u0947 \u0932\u093F\u090F \u0928\u093F\u092F\u0924 \u0905\u0902\u0915 \u0909\u0938\u0915\u0947 \u0938\u093E\u092E\u0928\u0947 \u0926\u093F\u090F \u0917\u090F \u0939\u0948\u0902 \u0964',
+                    en: 'The number of marks carried by a question/part is indicated against it.'
+                },
+                {
+                    hi: '\u092A\u094D\u0930\u0936\u094D\u0928\u094B\u0902 \u0915\u0947 \u0909\u0924\u094D\u0924\u0930 \u0909\u0938\u0940 \u092E\u093E\u0927\u094D\u092F\u092E \u092E\u0947\u0902 \u0932\u093F\u0916\u0947 \u091C\u093E\u0928\u0947 \u091A\u093E\u0939\u093F\u090F \u091C\u094B \u0906\u092A\u0928\u0947 \u0905\u092A\u0928\u0947 \u092A\u094D\u0930\u0935\u0947\u0936 \u092A\u094D\u0930\u092E\u093E\u0923\u002D\u092A\u0924\u094D\u0930 \u092E\u0947\u0902 \u0905\u0927\u093F\u0915\u0943\u0924 \u0915\u093F\u092F\u093E \u0939\u0948, \u0914\u0930 \u0907\u0938 \u092E\u093E\u0927\u094D\u092F\u092E \u0915\u093E \u0938\u094D\u092A\u0937\u094D\u091F \u0909\u0932\u094D\u0932\u0947\u0916 \u0915\u094D\u092F\u0942.\u0938\u0940.\u090F. \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u0915\u0947 \u092E\u0941\u0916\u002D\u092A\u0943\u0937\u094D\u0920 \u092A\u0930 \u0928\u093F\u0930\u094D\u0926\u093F\u0937\u094D\u091F \u0938\u094D\u0925\u093E\u0928 \u092A\u0930 \u0915\u093F\u092F\u093E \u091C\u093E\u0928\u093E \u091A\u093E\u0939\u093F\u090F \u0964 \u092A\u094D\u0930\u093E\u0927\u093F\u0915\u0943\u0924 \u092E\u093E\u0927\u094D\u092F\u092E \u0915\u0947 \u0905\u0924\u093F\u0930\u093F\u0915\u094D\u0924 \u0905\u0928\u094D\u092F \u0915\u093F\u0938\u0940 \u092E\u093E\u0927\u094D\u092F\u092E \u092E\u0947\u0902 \u0932\u093F\u0916\u0947 \u0917\u090F \u0909\u0924\u094D\u0924\u0930 \u092A\u0930 \u0915\u094B\u0908 \u0905\u0902\u0915 \u0928\u0939\u0940\u0902 \u092E\u093F\u0932\u0947\u0902\u0917\u0947 \u0964',
+                    en: 'Answers must be written in the medium authorized in the Admission Certificate which must be stated clearly on the cover of this Question-cum-Answer (QCA) Booklet in the space provided. No marks will be given for answers written in a medium other than the authorized one.'
+                },
+                {
+                    hi: '\u0936\u092C\u094D\u0926 \u0938\u0940\u092E\u093E, \u091C\u0939\u093E\u0901 \u092D\u0940 \u0928\u093F\u0930\u094D\u0926\u093F\u0937\u094D\u091F \u0939\u0948, \u0915\u093E \u0905\u0928\u0941\u0938\u0930\u0923 \u0915\u093F\u092F\u093E \u091C\u093E\u0928\u093E \u091A\u093E\u0939\u093F\u090F \u0964',
+                    en: 'Word limit in questions, wherever specified, should be adhered to.'
+                },
+                {
+                    hi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 \u0915\u093F\u0938\u0940 \u092A\u0943\u0937\u094D\u0920 \u092F\u093E \u092A\u0943\u0937\u094D\u0920 \u0915\u0947 \u092D\u093E\u0917 \u0915\u094B \u0916\u093E\u0932\u0940 \u091B\u094B\u0921\u093C\u0928\u0947 \u092A\u0930, \u0909\u0938\u0947 \u0938\u094D\u092A\u0937\u094D\u091F \u0930\u0942\u092A \u0938\u0947 \u0915\u093E\u091F \u0926\u093F\u092F\u093E \u091C\u093E\u0928\u093E \u091A\u093E\u0939\u093F\u090F \u0964',
+                    en: 'Any page or portion of the page left blank in the Question-cum-Answer Booklet must be clearly struck off.'
+                }
+            ];
+
+            var rowY = y;
+            var numPad = 8;
+            var cellPad = 3;
+            var hiColW = colW - numPad;
+            var enColW = colW;
+
+            for (var i = 0; i < instructions.length; i++) {
+                var hiH = 0, enH = 0;
+                var hiLines = [], enLines = [];
+
+                if (fontsReady) {
+                    doc.setFont('NotoDevReg', 'normal');
+                    doc.setFontSize(8.5);
+                    hiLines = doc.splitTextToSize(instructions[i].hi, hiColW - cellPad * 2);
+                    hiH = hiLines.length * 3.8;
+                }
+
+                doc.setFont('times', 'normal');
+                doc.setFontSize(9);
+                enLines = doc.splitTextToSize(instructions[i].en, enColW - cellPad * 2);
+                enH = enLines.length * 4.0;
+
+                var rowH = Math.max(hiH, enH) + cellPad * 2;
+
+                doc.setLineWidth(0.2);
+                doc.rect(mL, rowY, tW, rowH);
+                doc.line(mL + numPad, rowY, mL + numPad, rowY + rowH);
+                doc.line(mL + colW, rowY, mL + colW, rowY + rowH);
+
+                doc.setFont('times', 'normal');
+                doc.setFontSize(9);
+                doc.text(String(i + 1), mL + numPad / 2, rowY + cellPad + 3, { align: 'center' });
+
+                if (fontsReady && hiLines.length > 0) {
+                    doc.setFont('NotoDevReg', 'normal');
+                    doc.setFontSize(8.5);
+                    doc.text(hiLines, mL + numPad + cellPad, rowY + cellPad + 3);
+                }
+
+                doc.setFont('times', 'normal');
+                doc.setFontSize(9);
+                doc.text(enLines, mL + colW + cellPad, rowY + cellPad + 3);
+
+                rowY += rowH;
+            }
+
+            doc.setFont('times', 'normal');
+            doc.setFontSize(10);
+            doc.text(paper.code + '/QP', mL, H - 10);
+            doc.text('2', W / 2, H - 10, { align: 'center' });
+        }
+
+        function drawQPSectionHeading(doc, paper) {
+            var W = PG.W;
+            var mL = 14, rX = W - 14;
+            var cx = W / 2;
+            var mT = 14;
+
+            doc.setTextColor(0);
+            if (fontsReady) {
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(11);
+                var hTitle = paper.hi + (paper.paperHi ? ', ' + paper.paperHi : '');
+                doc.text(hTitle, cx, mT, { align: 'center' });
+            }
+            doc.setFont('times', 'bold');
+            doc.setFontSize(11);
+            var eTitle = paper.en + (paper.paperEn ? ', ' + paper.paperEn : '');
+            doc.text(eTitle, cx, mT + 5, { align: 'center' });
+
+            doc.setLineWidth(0.3);
+            doc.line(mL, mT + 8, rX, mT + 8);
+        }
+
+        function drawQPFooter(doc, paper, pageNum) {
+            var W = PG.W, H = PG.H;
+            var mL = 14;
+            doc.setFont('times', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            doc.text(paper.code + '/QP', mL, H - 10);
+            doc.text(String(pageNum), W / 2, H - 10, { align: 'center' });
+        }
+
+        function drawQPQuestionsPages(doc, paper, questions, startPageNum) {
+            var W = PG.W, H = PG.H;
+            var mL = 14, mR = 14;
+            var rX = W - mR;
+            var pageNum = startPageNum;
+            var qNumW = 12;
+            var marksReserve = 14;
+            var textW = (rX - mL) - qNumW - marksReserve;
+            var textX = mL + qNumW;
+
+            var headerBottom = 22;
+            var pageBottom = H - 18;
+            var lineH = 5.4;
+            var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+            drawQPSectionHeading(doc, paper);
+            var y = headerBottom + 4;
+            var currentSection = null;
+
+            for (var qi = 0; qi < questions.length; qi++) {
+                var item = questions[qi];
+                var hasSubparts = item.subparts && item.subparts.length > 0;
+                var wlHi = ' (' + item.wordLimit + ' \u0936\u092C\u094D\u0926\u094B\u0902 \u092E\u0947\u0902 \u0909\u0924\u094D\u0924\u0930 \u0926\u0940\u091C\u093F\u090F)';
+                var wlEn = ' (Answer in ' + item.wordLimit + ' words)';
+
+                var stemHi = [];
+                var stemEn = [];
+                if (item.text) {
+                    if (item.hindi && fontsReady) {
+                        doc.setFont('NotoDevReg', 'normal');
+                        doc.setFontSize(11);
+                        stemHi = doc.splitTextToSize(item.hindi + (hasSubparts ? '' : wlHi), textW);
+                    }
+                    doc.setFont('times', 'italic');
+                    doc.setFontSize(11);
+                    stemEn = doc.splitTextToSize(item.text + (hasSubparts ? '' : wlEn), textW);
+                }
+
+                var spSets = [];
+                for (var si = 0; hasSubparts && si < item.subparts.length; si++) {
+                    var sp = item.subparts[si];
+                    var label = '(' + (letters[si] || (si + 1)) + ')';
+                    var sHi = [];
+                    if (sp.hindi && fontsReady) {
+                        doc.setFont('NotoDevReg', 'normal');
+                        doc.setFontSize(11);
+                        sHi = doc.splitTextToSize(label + ' ' + sp.hindi, textW);
+                    }
+                    doc.setFont('times', 'italic');
+                    doc.setFontSize(11);
+                    var sEn = doc.splitTextToSize(label + ' ' + sp.text, textW);
+                    spSets.push({ hi: sHi, en: sEn, marks: sp.marks });
+                }
+
+                var blockH = 0;
+                if (stemHi.length) blockH += stemHi.length * lineH + 2;
+                if (stemEn.length) blockH += stemEn.length * lineH;
+                if (hasSubparts) {
+                    if (item.text) blockH += 3;
+                    for (var k = 0; k < spSets.length; k++) {
+                        if (spSets[k].hi.length) blockH += spSets[k].hi.length * lineH + 2;
+                        blockH += spSets[k].en.length * lineH + 3;
+                    }
+                }
+                blockH += 6;
+
+                var needSectionHeader = item.section && item.section !== currentSection;
+                var sectionHeaderH = needSectionHeader ? 16 : 0;
+
+                if ((y + blockH + sectionHeaderH > pageBottom) && qi > 0) {
+                    drawQPFooter(doc, paper, pageNum);
+                    doc.addPage();
+                    pageNum++;
+                    drawQPSectionHeading(doc, paper);
+                    y = headerBottom + 4;
+                }
+
+                if (needSectionHeader) {
+                    var sLabel = SECTION_LABELS[item.section];
+                    if (sLabel) {
+                        if (fontsReady) {
+                            doc.setFont('NotoDevBold', 'normal');
+                            doc.setFontSize(12);
+                            doc.setTextColor(0);
+                            doc.text(sLabel.hi, W / 2, y + 5, { align: 'center' });
+                        }
+                        doc.setFont('times', 'bold');
+                        doc.setFontSize(12);
+                        doc.setTextColor(0);
+                        doc.text(sLabel.en, W / 2, y + 11, { align: 'center' });
+                        y += sectionHeaderH;
+                    }
+                    currentSection = item.section;
+                }
+
+                doc.setFont('times', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(0);
+                doc.text(String(item.qno) + '.', mL + 2, y);
+
+                var lineY = y;
+                var stemEnLastY = null;
+
+                if (stemHi.length) {
+                    doc.setFont('NotoDevReg', 'normal');
+                    doc.setFontSize(11);
+                    doc.text(stemHi, textX, lineY);
+                    lineY += stemHi.length * lineH + 2;
+                }
+                if (stemEn.length) {
+                    doc.setFont('times', 'italic');
+                    doc.setFontSize(11);
+                    doc.text(stemEn, textX, lineY);
+                    stemEnLastY = lineY + (stemEn.length - 1) * lineH;
+                    lineY = stemEnLastY + lineH;
+                }
+
+                if (!hasSubparts && stemEnLastY !== null) {
+                    doc.setFont('times', 'bold');
+                    doc.setFontSize(11);
+                    doc.text(String(item.marks), rX - 2, stemEnLastY, { align: 'right' });
+                } else if (hasSubparts) {
+                    if (item.text) lineY += 1;
+                    for (var ki = 0; ki < spSets.length; ki++) {
+                        var ss = spSets[ki];
+                        if (ss.hi.length) {
+                            doc.setFont('NotoDevReg', 'normal');
+                            doc.setFontSize(11);
+                            doc.text(ss.hi, textX, lineY);
+                            lineY += ss.hi.length * lineH + 2;
+                        }
+                        doc.setFont('times', 'italic');
+                        doc.setFontSize(11);
+                        doc.text(ss.en, textX, lineY);
+                        var spLastY = lineY + (ss.en.length - 1) * lineH;
+
+                        doc.setFont('times', 'bold');
+                        doc.setFontSize(11);
+                        doc.text(String(ss.marks), rX - 2, spLastY, { align: 'right' });
+
+                        lineY = spLastY + lineH + 2;
+                    }
+                }
+
+                y += blockH;
+            }
+
+            drawQPFooter(doc, paper, pageNum);
+            return pageNum;
         }
 
         function showPreview(doc) {
