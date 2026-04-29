@@ -819,7 +819,7 @@
         var PG = {
             W: 210,
             H: 297,
-            margin: { top: 12, bottom: 14, left: 15, right: 8 },
+            margin: { top: 9, bottom: 17, left: 11, right: 3 },
             qColW: 14,
             rightMarginW: 26,
             pages: { 5: 1, 10: 2, 15: 3, 20: 4, 25: 5, 30: 6, 40: 8, 50: 10, 60: 12, 125: 12 }
@@ -1713,16 +1713,10 @@
         }
 
         function drawRoughPage(doc, pageNum, paper) {
-            var W = PG.W, H = PG.H;
-            var mL = PG.margin.left, mR = PG.margin.right;
-            var mT = PG.margin.top, mB = PG.margin.bottom;
-            var cR = W - mR;
-            var cW = cR - mL;
-            var cH = H - mT - mB;
+            var W = PG.W;
+            var mT = PG.margin.top;
 
             doc.setDrawColor(0);
-            doc.setLineWidth(0.35);
-            doc.rect(mL, mT, cW, cH);
 
             if (fontsReady) {
                 doc.setFont('NotoDevBold', 'normal');
@@ -1741,9 +1735,7 @@
 
         function drawFrame(doc, cL, cT, cW, cH, qLineX, mLineX, cB) {
             doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(0.35);
-            doc.rect(cL, cT, cW, cH);
-            doc.setLineWidth(0.2);
+            doc.setLineWidth(0.25);
             doc.line(qLineX, cT, qLineX, cB);
             doc.line(mLineX, cT, mLineX, cB);
         }
@@ -1931,7 +1923,7 @@
         }
 
         function drawFooter(doc, pageNum, paper) {
-            var footerY = PG.H - PG.margin.bottom + 8;
+            var footerY = PG.H - 5;
             doc.setFont('times', 'normal');
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
