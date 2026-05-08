@@ -1794,7 +1794,7 @@
                 if (item.hindi && fontsReady) {
                     var hindiText = item.hindi + (hasSubparts ? '' : wlClauseHi);
                     doc.setFont('NotoDevReg', 'normal');
-                    doc.setFontSize(11);
+                    doc.setFontSize(12);
                     doc.setTextColor(0, 0, 0);
                     var hindiWrapped = doc.splitTextToSize(hindiText, maxW);
                     var hindiLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
@@ -1804,7 +1804,7 @@
 
                 var engFullText = item.text + (hasSubparts ? '' : wlClauseEn);
                 doc.setFont('times', 'normal');
-                doc.setFontSize(11);
+                doc.setFontSize(12);
                 doc.setTextColor(0, 0, 0);
                 var engWrapped = doc.splitTextToSize(engFullText, maxW);
                 var engLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
@@ -1837,7 +1837,7 @@
 
                 if (sp.hindi && fontsReady) {
                     doc.setFont('NotoDevReg', 'normal');
-                    doc.setFontSize(11);
+                    doc.setFontSize(12);
                     var hiSpWrapped = doc.splitTextToSize(label + ' ' + sp.hindi, maxW);
                     var hiSpLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
                     doc.text(hiSpWrapped, textX, y);
@@ -1845,7 +1845,7 @@
                 }
 
                 doc.setFont('times', 'normal');
-                doc.setFontSize(11);
+                doc.setFontSize(12);
                 var enSpWrapped = doc.splitTextToSize(label + ' ' + sp.text, maxW);
                 var enSpLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
                 doc.text(enSpWrapped, textX, y);
@@ -2227,11 +2227,11 @@
                 if (item.text) {
                     if (item.hindi && fontsReady) {
                         doc.setFont('NotoDevReg', 'normal');
-                        doc.setFontSize(11);
+                        doc.setFontSize(12);
                         stemHi = doc.splitTextToSize(item.hindi + (hasSubparts ? '' : wlHi), textW);
                     }
                     doc.setFont('times', 'normal');
-                    doc.setFontSize(11);
+                    doc.setFontSize(12);
                     stemEn = doc.splitTextToSize(item.text + (hasSubparts ? '' : wlEn), textW);
                 }
 
@@ -2242,11 +2242,11 @@
                     var sHi = [];
                     if (sp.hindi && fontsReady) {
                         doc.setFont('NotoDevReg', 'normal');
-                        doc.setFontSize(11);
+                        doc.setFontSize(12);
                         sHi = doc.splitTextToSize(label + ' ' + sp.hindi, textW);
                     }
                     doc.setFont('times', 'normal');
-                    doc.setFontSize(11);
+                    doc.setFontSize(12);
                     var sEn = doc.splitTextToSize(label + ' ' + sp.text, textW);
                     spSets.push({ hi: sHi, en: sEn, marks: sp.marks });
                 }
@@ -2302,13 +2302,13 @@
 
                 if (stemHi.length) {
                     doc.setFont('NotoDevReg', 'normal');
-                    doc.setFontSize(11);
+                    doc.setFontSize(12);
                     doc.text(stemHi, textX, lineY);
                     lineY += stemHi.length * lineH + 2;
                 }
                 if (stemEn.length) {
                     doc.setFont('times', 'normal');
-                    doc.setFontSize(11);
+                    doc.setFontSize(12);
                     doc.text(stemEn, textX, lineY);
                     stemEnLastY = lineY + (stemEn.length - 1) * lineH;
                     lineY = stemEnLastY + lineH;
@@ -2324,12 +2324,12 @@
                         var ss = spSets[ki];
                         if (ss.hi.length) {
                             doc.setFont('NotoDevReg', 'normal');
-                            doc.setFontSize(11);
+                            doc.setFontSize(12);
                             doc.text(ss.hi, textX, lineY);
                             lineY += ss.hi.length * lineH + 2;
                         }
                         doc.setFont('times', 'normal');
-                        doc.setFontSize(11);
+                        doc.setFontSize(12);
                         doc.text(ss.en, textX, lineY);
                         var spLastY = lineY + (ss.en.length - 1) * lineH;
 
