@@ -227,7 +227,6 @@
 
         .question-card .form-group textarea {
             min-height: 60px;
-            font-style: italic;
         }
 
         .subparts-wrap {
@@ -285,7 +284,6 @@
         .subpart-card textarea {
             width: 100%;
             min-height: 50px;
-            font-style: italic;
             padding: 0.55rem 0.7rem;
             border: 1.5px solid var(--border);
             border-radius: 6px;
@@ -1805,7 +1803,7 @@
                 }
 
                 var engFullText = item.text + (hasSubparts ? '' : wlClauseEn);
-                doc.setFont('times', 'italic');
+                doc.setFont('times', 'normal');
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
                 var engWrapped = doc.splitTextToSize(engFullText, maxW);
@@ -1846,7 +1844,7 @@
                     y += (hiSpWrapped.length - 1) * hiSpLeading + hiSpLeading + 1.5;
                 }
 
-                doc.setFont('times', 'italic');
+                doc.setFont('times', 'normal');
                 doc.setFontSize(11);
                 var enSpWrapped = doc.splitTextToSize(label + ' ' + sp.text, maxW);
                 var enSpLeading = doc.getFontSize() * doc.getLineHeightFactor() * 0.3528;
@@ -2232,7 +2230,7 @@
                         doc.setFontSize(11);
                         stemHi = doc.splitTextToSize(item.hindi + (hasSubparts ? '' : wlHi), textW);
                     }
-                    doc.setFont('times', 'italic');
+                    doc.setFont('times', 'normal');
                     doc.setFontSize(11);
                     stemEn = doc.splitTextToSize(item.text + (hasSubparts ? '' : wlEn), textW);
                 }
@@ -2247,7 +2245,7 @@
                         doc.setFontSize(11);
                         sHi = doc.splitTextToSize(label + ' ' + sp.hindi, textW);
                     }
-                    doc.setFont('times', 'italic');
+                    doc.setFont('times', 'normal');
                     doc.setFontSize(11);
                     var sEn = doc.splitTextToSize(label + ' ' + sp.text, textW);
                     spSets.push({ hi: sHi, en: sEn, marks: sp.marks });
@@ -2309,7 +2307,7 @@
                     lineY += stemHi.length * lineH + 2;
                 }
                 if (stemEn.length) {
-                    doc.setFont('times', 'italic');
+                    doc.setFont('times', 'normal');
                     doc.setFontSize(11);
                     doc.text(stemEn, textX, lineY);
                     stemEnLastY = lineY + (stemEn.length - 1) * lineH;
@@ -2330,7 +2328,7 @@
                             doc.text(ss.hi, textX, lineY);
                             lineY += ss.hi.length * lineH + 2;
                         }
-                        doc.setFont('times', 'italic');
+                        doc.setFont('times', 'normal');
                         doc.setFontSize(11);
                         doc.text(ss.en, textX, lineY);
                         var spLastY = lineY + (ss.en.length - 1) * lineH;
