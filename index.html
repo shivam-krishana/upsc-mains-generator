@@ -1886,7 +1886,7 @@
                     doc.text(stemHiWrapped, textX, y);
                     y += (stemHiWrapped.length - 1) * stemHiLeading + stemHiLeading + 1.5;
                 }
-                doc.setFont('times', 'italic');
+                doc.setFont('times', 'normal');
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
                 var stemEnWrapped = doc.splitTextToSize(item.text, maxW);
@@ -1909,7 +1909,7 @@
                 y += (hiSpWrapped.length - 1) * hiSpLeading + hiSpLeading + lineH;
             }
 
-            doc.setFont('times', 'italic');
+            doc.setFont('times', 'normal');
             doc.setFontSize(11);
             doc.setTextColor(0, 0, 0);
             var enSpWrapped = doc.splitTextToSize(sp.text + wlClauseEn, maxW);
