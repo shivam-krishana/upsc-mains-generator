@@ -379,6 +379,115 @@
             color: var(--text);
         }
 
+        .mode-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .mode-tab {
+            padding: 0.65rem 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .mode-tab:hover {
+            border-color: #c5cad4;
+            color: var(--text);
+        }
+
+        .mode-tab.active {
+            border-color: var(--navy-light);
+            background: #f0f4ff;
+            color: var(--navy-light);
+        }
+
+        .mode-desc {
+            margin-top: 0.55rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .bulk-panel {
+            margin-bottom: 1.25rem;
+            padding: 1rem;
+            background: #f8f9fb;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .bulk-panel h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .bulk-panel textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            line-height: 1.55;
+            resize: vertical;
+        }
+
+        .bulk-panel textarea:focus {
+            outline: none;
+            border-color: var(--navy-light);
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        .bulk-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.65rem;
+        }
+
+        .btn-secondary {
+            padding: 0.5rem 0.85rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            color: var(--text);
+            transition: all 0.15s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--navy-light);
+            color: var(--navy-light);
+            background: #f5f8ff;
+        }
+
+        .bulk-format-hint {
+            margin-top: 0.65rem;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.55;
+        }
+
+        .bulk-format-hint code {
+            font-size: 0.7rem;
+            background: #eef1f6;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+        }
+
         .btn-add-q {
             width: 100%;
             padding: 0.6rem;
@@ -652,6 +761,25 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label>Build mode</label>
+                <div class="mode-tabs" role="tablist">
+                    <button type="button" class="mode-tab active" id="modeSample" onclick="setPaperMode('sample')">Custom sample</button>
+                    <button type="button" class="mode-tab" id="modeFull" onclick="setPaperMode('full')">Full-length paper</button>
+                </div>
+                <p class="mode-desc" id="modeDesc">Add one or a few questions manually to practice a topic or mock a single question.</p>
+            </div>
+
+            <div id="bulkImportPanel" class="bulk-panel" style="display: none;">
+                <h3>Bulk import questions</h3>
+                <textarea id="bulkImportText" spellcheck="false" placeholder="Paste questions in the format shown below…"></textarea>
+                <div class="bulk-actions">
+                    <button type="button" class="btn-secondary" onclick="applyBulkImport()">Apply bulk import</button>
+                    <button type="button" class="btn-secondary" onclick="insertFullLengthSkeleton()">Empty full-length slots</button>
+                </div>
+                <p class="bulk-format-hint" id="bulkFormatHint"></p>
+            </div>
+
             <div class="row-2">
                 <div class="form-group">
                     <label for="timeHours">Time — Hours</label>
@@ -751,6 +879,7 @@
         var fontRegBase64 = null;
         var fontBoldBase64 = null;
         var fontsReady = false;
+        var fontLoadPromise = null;
 
         var PAPERS = {
             gs1:   { en: 'GENERAL STUDIES',           hi: '\u0938\u093E\u092E\u093E\u0928\u094D\u092F \u0905\u0927\u094D\u092F\u092F\u0928', paperEn: 'Paper I',   paperHi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 I',   code: 'XXX-X-GSI'   },
@@ -766,11 +895,481 @@
             gs1:   { sections: true,  subparts: false },
             gs2:   { sections: true,  subparts: false },
             gs3:   { sections: true,  subparts: false },
-            gs4:   { sections: true,  subparts: false },
+            gs4:   { sections: true,  subparts: true  },
             essay: { sections: true,  subparts: false },
             opt1:  { sections: true,  subparts: true  },
             opt2:  { sections: true,  subparts: true  }
         };
+
+        var PAPER_TIME = {
+            gs1: { hours: 3, mins: 0 }, gs2: { hours: 3, mins: 0 }, gs3: { hours: 3, mins: 0 },
+            gs4: { hours: 3, mins: 0 }, essay: { hours: 3, mins: 0 },
+            opt1: { hours: 3, mins: 0 }, opt2: { hours: 3, mins: 0 }
+        };
+
+        function optionalCompulsorySubpartMarks() {
+            return [10, 15, 15, 10];
+        }
+
+        function getFullLengthPatternSummary(key) {
+            switch (key) {
+                case 'gs1':
+                case 'gs2':
+                case 'gs3':
+                    return 'UPSC GS pattern: Section A Q1\u201310 (10 marks, 150 words) + Section B Q11\u201320 (15 marks, 250 words). All 20 compulsory \u2014 250 marks, 3 hours.';
+                case 'gs4':
+                    return 'UPSC GS-IV (Ethics): Section A Q1\u20136 with 13 subparts (10 marks, 150 words each) + Section B Q7\u201312 case studies (20 marks, 250 words each). 250 marks, 3 hours.';
+                case 'essay':
+                    return 'UPSC Essay: Section A and Section B \u2014 write one essay in each section (125 marks, 1200 words each; 250 marks total). The booklet has one answer space per section; pick one topic from each section on the question paper.';
+                case 'opt1':
+                case 'opt2':
+                    return 'UPSC Optional: 8 questions (Sec A Q1\u20134, Sec B Q5\u20138). Q1 & Q5 compulsory with subparts 10+15+15+10; Q2\u20134 & Q6\u20138 are 20 marks. Attempt 5 in exam; template lists all 8 for the question paper.';
+                default:
+                    return 'Full-length template for the selected paper.';
+            }
+        }
+
+        function getFullLengthSlots(key) {
+            var slots = [];
+            var i;
+            if (key === 'gs1' || key === 'gs2' || key === 'gs3') {
+                for (i = 1; i <= 10; i++) {
+                    slots.push({
+                        qno: i, section: 'A', marks: 10, words: 150,
+                        stemPlaceholder: 'Section A, Q' + i + ' \u2014 10 marks, 150 words'
+                    });
+                }
+                for (i = 11; i <= 20; i++) {
+                    slots.push({
+                        qno: i, section: 'B', marks: 15, words: 250,
+                        stemPlaceholder: 'Section B, Q' + i + ' \u2014 15 marks, 250 words'
+                    });
+                }
+                return slots;
+            }
+            if (key === 'gs4') {
+                var gs4a = [
+                    { qno: 1, parts: 2 }, { qno: 2, parts: 2 }, { qno: 3, parts: 3 },
+                    { qno: 4, parts: 2 }, { qno: 5, parts: 2 }, { qno: 6, parts: 2 }
+                ];
+                gs4a.forEach(function (def) {
+                    var subparts = [];
+                    for (i = 0; i < def.parts; i++) {
+                        subparts.push({ marks: 10 });
+                    }
+                    slots.push({
+                        qno: def.qno, section: 'A', marks: 10, words: 150,
+                        stemPlaceholder: 'Section A, Q' + def.qno + ' \u2014 theory (subparts 10 marks, 150 words each)',
+                        subparts: subparts
+                    });
+                });
+                for (i = 7; i <= 12; i++) {
+                    slots.push({
+                        qno: i, section: 'B', marks: 20, words: 250,
+                        stemPlaceholder: 'Section B, Case study Q' + i + ' \u2014 20 marks, 250 words'
+                    });
+                }
+                return slots;
+            }
+            if (key === 'essay') {
+                slots.push({
+                    qno: 1, section: 'A', marks: 125, words: 1200,
+                    stemPlaceholder: 'Section A \u2014 your chosen essay topic (one essay only in this section)'
+                });
+                slots.push({
+                    qno: 2, section: 'B', marks: 125, words: 1200,
+                    stemPlaceholder: 'Section B \u2014 your chosen essay topic (one essay only in this section)'
+                });
+                return slots;
+            }
+            if (key === 'opt1' || key === 'opt2') {
+                var comp = optionalCompulsorySubpartMarks();
+                slots.push({
+                    qno: 1, section: 'A', marks: 15, words: 250,
+                    stemPlaceholder: 'Q1 (compulsory) \u2014 common stem; subparts 10+15+15+10',
+                    subparts: comp.map(function (m) { return { marks: m }; })
+                });
+                for (i = 2; i <= 4; i++) {
+                    slots.push({
+                        qno: i, section: 'A', marks: 20, words: 250,
+                        stemPlaceholder: 'Section A, Q' + i + ' \u2014 20 marks (attempt 2 of Q2\u20134 in exam)'
+                    });
+                }
+                slots.push({
+                    qno: 5, section: 'B', marks: 15, words: 250,
+                    stemPlaceholder: 'Q5 (compulsory) \u2014 common stem; subparts 10+15+15+10',
+                    subparts: comp.map(function (m) { return { marks: m }; })
+                });
+                for (i = 6; i <= 8; i++) {
+                    slots.push({
+                        qno: i, section: 'B', marks: 20, words: 250,
+                        stemPlaceholder: 'Section B, Q' + i + ' \u2014 20 marks (attempt 2 of Q6\u20138 in exam)'
+                    });
+                }
+                return slots;
+            }
+            return slots;
+        }
+
+        function applySlotToCard(card, slot) {
+            card.querySelector('.q-no').value = slot.qno;
+            card.querySelector('.q-marks').value = String(slot.marks);
+            card.querySelector('.q-wl').value = String(slot.words);
+            onMarksChange(card.querySelector('.q-marks'));
+            if (slot.section && getCurrentCaps().sections) {
+                var secEl = card.querySelector('.q-section');
+                if (secEl) secEl.value = slot.section;
+            }
+            card.querySelector('.q-text').placeholder = slot.stemPlaceholder || ('Question ' + slot.qno);
+            if (slot.subparts && slot.subparts.length && getCurrentCaps().subparts) {
+                var spLetters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+                slot.subparts.forEach(function (sp, spIdx) {
+                    addSubpart(card.querySelector('.btn-add-subpart'));
+                    var spCard = card.querySelector('.subpart-card:last-child');
+                    if (!spCard) return;
+                    spCard.querySelector('.sp-marks-val').value = String(sp.marks);
+                    var wl = slot.words === 150 ? 150 : 250;
+                    var letter = spLetters[spIdx] || String(spIdx + 1);
+                    var spDefault = 'Subpart (' + letter + ') \u2014 ' + sp.marks + ' marks, ~' + wl + ' words';
+                    spCard.querySelector('.sp-text').placeholder = spDefault;
+                    spCard.querySelector('.sp-text').value = spDefault;
+                });
+                renumberSubparts(card);
+            }
+        }
+
+        var paperBuildMode = 'sample';
+
+        function getPaperMode() {
+            return paperBuildMode;
+        }
+
+        function updateModeDesc() {
+            var el = document.getElementById('modeDesc');
+            if (!el) return;
+            if (paperBuildMode !== 'full') {
+                el.textContent = 'Add one or a few questions manually to practice a topic or mock a single question.';
+                return;
+            }
+            var key = document.getElementById('paperSelect').value;
+            el.textContent = getFullLengthPatternSummary(key) + ' Use bulk import or fill the empty slots below.';
+        }
+
+        function setPaperMode(mode) {
+            paperBuildMode = mode === 'full' ? 'full' : 'sample';
+            document.getElementById('modeSample').classList.toggle('active', paperBuildMode === 'sample');
+            document.getElementById('modeFull').classList.toggle('active', paperBuildMode === 'full');
+            document.getElementById('bulkImportPanel').style.display = paperBuildMode === 'full' ? '' : 'none';
+            updateModeDesc();
+            var addBtn = document.getElementById('btnAddQ');
+            addBtn.innerHTML = paperBuildMode === 'full'
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add question manually'
+                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Question';
+            updateBulkFormatHint();
+        }
+
+        function updateBulkFormatHint() {
+            var el = document.getElementById('bulkFormatHint');
+            if (!el) return;
+            var caps = getCurrentCaps();
+            var base = 'One question per block. Lines starting with <code>#</code> are ignored. '
+                + 'Main question: <code>Qno | Section | Marks | Words | Text</code> (Section A/B or -). '
+                + 'Subparts (optional papers): <code>(a) | Marks | Text</code> or <code>a | Marks | Text</code> under the parent question.';
+            if (caps.subparts) {
+                base += ' Parent stem on the Q line; subparts on following lines (GS-IV, Optional).';
+            }
+            if (paperBuildMode === 'full') {
+                var key = document.getElementById('paperSelect').value;
+                var slots = getFullLengthSlots(key);
+                base += ' <strong>Full-length:</strong> import must match all ' + slots.length + ' slots (Q numbers, sections, marks, words'
+                    + (caps.subparts ? ', subpart counts/marks' : '') + ') — use “Empty full-length slots” first.';
+            }
+            el.innerHTML = base + '<br>Example: <code>1 | A | 15 | 250 | Critically examine…</code>';
+        }
+
+        function applyDefaultTimeForPaper() {
+            var key = document.getElementById('paperSelect').value;
+            var t = PAPER_TIME[key];
+            if (!t) return;
+            document.getElementById('timeHours').value = t.hours;
+            document.getElementById('timeMins').value = t.mins;
+        }
+
+        function insertFullLengthSkeleton(silent) {
+            var key = document.getElementById('paperSelect').value;
+            var slots = getFullLengthSlots(key);
+            if (slots.length === 0) return;
+
+            var container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            questionCounter = 0;
+
+            slots.forEach(function (slot) {
+                addQuestion();
+                var card = container.querySelector('.question-card:last-child');
+                if (card) applySlotToCard(card, slot);
+            });
+
+            renumberQuestions();
+            updateRemoveButtons();
+            if (silent !== true) {
+                showToast('Added ' + slots.length + ' slots (' + getFullLengthPatternSummary(key).split('.')[0] + ')');
+            }
+        }
+
+        function parseBulkQuestionText(text) {
+            var caps = getCurrentCaps();
+            var lines = text.split(/\r?\n/);
+            var questions = [];
+            var current = null;
+            var subpartRe = /^\s*\(?([a-h])\)?\s*\|\s*(\d+)\s*\|\s*(.+)$/i;
+            var mainRe = /^Q?\s*(\d+)\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*(.+)$/i;
+            var mainShortRe = /^Q?\s*(\d+)\s*\|\s*([^|]*)\|\s*(.+)$/i;
+
+            function pushCurrent() {
+                if (!current) return;
+                if (!current.text && (!current.subparts || current.subparts.length === 0)) {
+                    current = null;
+                    return;
+                }
+                questions.push(current);
+                current = null;
+            }
+
+            function parseSection(raw) {
+                var s = (raw || '').trim().toUpperCase();
+                if (s === '-' || s === '' || s === 'NONE') return '';
+                if (s === 'A' || s === 'B') return s;
+                return '';
+            }
+
+            function parseMarksWords(mRaw, wRaw, fallbackM, fallbackW) {
+                var m = parseInt((mRaw || '').trim(), 10);
+                var w = parseInt((wRaw || '').trim(), 10);
+                if (!m || m <= 0) m = fallbackM;
+                if (!w || w <= 0) w = (m === 10) ? 150 : fallbackW;
+                return { marks: m, words: w };
+            }
+
+            var key = document.getElementById('paperSelect').value;
+            var spec = { marks: 15, words: 250 };
+            if (key === 'gs1' || key === 'gs2' || key === 'gs3') {
+                spec = { marks: 10, words: 150 };
+            }
+
+            for (var li = 0; li < lines.length; li++) {
+                var line = lines[li];
+                if (!line.trim() || /^\s*#/.test(line)) continue;
+
+                var spMatch = line.match(subpartRe);
+                if (spMatch) {
+                    if (!caps.subparts) continue;
+                    if (!current) {
+                        current = { qno: questions.length + 1, section: '', text: '', marks: spec.marks, words: spec.words, subparts: [] };
+                    }
+                    if (!current.subparts) current.subparts = [];
+                    current.subparts.push({
+                        letter: spMatch[1].toLowerCase(),
+                        marks: parseInt(spMatch[2], 10) || 10,
+                        text: spMatch[3].trim()
+                    });
+                    continue;
+                }
+
+                var mainMatch = line.match(mainRe);
+                if (mainMatch) {
+                    pushCurrent();
+                    var mw = parseMarksWords(mainMatch[3], mainMatch[4], spec.marks, spec.words);
+                    current = {
+                        qno: parseInt(mainMatch[1], 10) || (questions.length + 1),
+                        section: parseSection(mainMatch[2]),
+                        marks: mw.marks,
+                        words: mw.words,
+                        text: mainMatch[5].trim(),
+                        subparts: []
+                    };
+                    continue;
+                }
+
+                var shortMatch = line.match(mainShortRe);
+                if (shortMatch) {
+                    pushCurrent();
+                    current = {
+                        qno: parseInt(shortMatch[1], 10) || (questions.length + 1),
+                        section: parseSection(shortMatch[2]),
+                        marks: spec.marks,
+                        words: spec.words,
+                        text: shortMatch[3].trim(),
+                        subparts: []
+                    };
+                }
+            }
+            pushCurrent();
+            return questions;
+        }
+
+        function bulkImportSectionForQuestion(q, paperKey) {
+            if (q.section === 'A' || q.section === 'B') {
+                return q.section;
+            }
+            return inferSectionForQuestion(q.qno, paperKey);
+        }
+
+        /** Full-length mode only: bulk paste must match getFullLengthSlots() for the selected paper. */
+        function validateBulkImportForFullLength(parsed) {
+            var key = document.getElementById('paperSelect').value;
+            var slots = getFullLengthSlots(key);
+            if (slots.length === 0) {
+                return { ok: true };
+            }
+            if (parsed.length !== slots.length) {
+                return {
+                    ok: false,
+                    message: 'Full-length import must have exactly ' + slots.length + ' questions for this paper (found ' + parsed.length + '). Click “Empty full-length slots” and match that structure.'
+                };
+            }
+
+            var byQno = {};
+            for (var i = 0; i < parsed.length; i++) {
+                var q = parsed[i];
+                var n = parseInt(q.qno, 10);
+                if (!n || n < 1) {
+                    return { ok: false, message: 'Each question needs a valid Q number (line ' + (i + 1) + ').' };
+                }
+                if (byQno[n]) {
+                    return { ok: false, message: 'Duplicate Q' + n + ' in bulk import — each question number once.' };
+                }
+                byQno[n] = q;
+            }
+
+            for (var si = 0; si < slots.length; si++) {
+                var slot = slots[si];
+                var pq = byQno[slot.qno];
+                if (!pq) {
+                    return {
+                        ok: false,
+                        message: 'Missing Q' + slot.qno + '. This paper needs Q1–Q' + slots[slots.length - 1].qno + ' with the official marks/word limits.'
+                    };
+                }
+                if (pq.marks !== slot.marks) {
+                    return {
+                        ok: false,
+                        message: 'Q' + slot.qno + ' must be ' + slot.marks + ' marks (found ' + pq.marks + '). Wrong paper template or marks column.'
+                    };
+                }
+                if (pq.words !== slot.words) {
+                    return {
+                        ok: false,
+                        message: 'Q' + slot.qno + ' word limit must be ' + slot.words + ' (found ' + pq.words + ').'
+                    };
+                }
+                if (slot.section) {
+                    var sec = bulkImportSectionForQuestion(pq, key);
+                    if (sec !== slot.section) {
+                        return {
+                            ok: false,
+                            message: 'Q' + slot.qno + ' must be Section ' + slot.section + (sec ? ' (got ' + sec + ')' : ' — set section A/B on the Q line') + '.'
+                        };
+                    }
+                }
+                var expectedSub = slot.subparts ? slot.subparts.length : 0;
+                var gotSub = pq.subparts ? pq.subparts.length : 0;
+                if (expectedSub !== gotSub) {
+                    var subHint = expectedSub
+                        ? 'Add ' + expectedSub + ' subpart line(s) under Q' + slot.qno + ' (e.g. (a) | 10 | …).'
+                        : 'This question should not have subparts.';
+                    return {
+                        ok: false,
+                        message: 'Q' + slot.qno + ': expected ' + expectedSub + ' subpart(s), found ' + gotSub + '. ' + subHint
+                    };
+                }
+                if (expectedSub > 0) {
+                    for (var spIdx = 0; spIdx < slot.subparts.length; spIdx++) {
+                        var expM = slot.subparts[spIdx].marks;
+                        var gotM = parseInt(pq.subparts[spIdx].marks, 10);
+                        if (gotM !== expM) {
+                            return {
+                                ok: false,
+                                message: 'Q' + slot.qno + ' subpart ' + String.fromCharCode(97 + spIdx) + ' must be ' + expM + ' marks (found ' + gotM + ').'
+                            };
+                        }
+                    }
+                }
+            }
+
+            var qnoKeys = Object.keys(byQno);
+            for (var ki = 0; ki < qnoKeys.length; ki++) {
+                var qn = parseInt(qnoKeys[ki], 10);
+                var inTemplate = false;
+                for (var ti = 0; ti < slots.length; ti++) {
+                    if (slots[ti].qno === qn) {
+                        inTemplate = true;
+                        break;
+                    }
+                }
+                if (!inTemplate) {
+                    return { ok: false, message: 'Q' + qn + ' is not used on this full-length paper — remove extra questions or change paper type.' };
+                }
+            }
+
+            return { ok: true };
+        }
+
+        function applyBulkImport() {
+            var parsed = parseBulkQuestionText(document.getElementById('bulkImportText').value);
+            if (parsed.length === 0) {
+                showToast('No valid questions found — check the bulk format');
+                return;
+            }
+
+            if (paperBuildMode === 'full') {
+                var check = validateBulkImportForFullLength(parsed);
+                if (!check.ok) {
+                    showToast(check.message);
+                    return;
+                }
+            }
+
+            var essay = isEssayPaper();
+            if (essay && parsed.length > 2 && paperBuildMode !== 'full') {
+                showToast('Essay paper allows at most 2 questions');
+                parsed = parsed.slice(0, 2);
+            }
+
+            var container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            questionCounter = 0;
+            var caps = getCurrentCaps();
+
+            parsed.forEach(function (q) {
+                addQuestion();
+                var card = container.querySelector('.question-card:last-child');
+                if (!card) return;
+                card.querySelector('.q-no').value = q.qno;
+                card.querySelector('.q-marks').value = String(q.marks);
+                card.querySelector('.q-wl').value = String(q.words);
+                onMarksChange(card.querySelector('.q-marks'));
+                card.querySelector('.q-text').value = q.text || '';
+                if (caps.sections) {
+                    var secEl = card.querySelector('.q-section');
+                    if (secEl && q.section) secEl.value = q.section;
+                }
+                if (caps.subparts && q.subparts && q.subparts.length) {
+                    q.subparts.forEach(function (sp) {
+                        addSubpart(card.querySelector('.btn-add-subpart'));
+                        var spCard = card.querySelector('.subpart-card:last-child');
+                        if (!spCard) return;
+                        spCard.querySelector('.sp-text').value = sp.text;
+                        spCard.querySelector('.sp-marks-val').value = String(sp.marks);
+                    });
+                    renumberSubparts(card);
+                }
+            });
+
+            renumberQuestions();
+            updateRemoveButtons();
+            showToast('Imported ' + parsed.length + ' question' + (parsed.length > 1 ? 's' : ''));
+        }
 
         function getCurrentCaps() {
             return PAPER_CAPS[document.getElementById('paperSelect').value] || { sections: false, subparts: false };
@@ -780,6 +1379,57 @@
             'A': { en: 'SECTION A', hi: '\u0916\u0902\u0921 \u0915' },
             'B': { en: 'SECTION B', hi: '\u0916\u0902\u0921 \u0916' }
         };
+
+        function inferSectionForQuestion(qno, paperKey) {
+            var n = parseInt(qno, 10);
+            if (!n || n < 1) return '';
+            if (paperKey === 'gs1' || paperKey === 'gs2' || paperKey === 'gs3') {
+                if (n <= 10) return 'A';
+                if (n <= 20) return 'B';
+            }
+            if (paperKey === 'gs4') {
+                if (n <= 6) return 'A';
+                if (n <= 12) return 'B';
+            }
+            if (paperKey === 'opt1' || paperKey === 'opt2') {
+                if (n <= 4) return 'A';
+                if (n <= 8) return 'B';
+            }
+            if (paperKey === 'essay') {
+                if (n === 1) return 'A';
+                if (n >= 2) return 'B';
+            }
+            return '';
+        }
+
+        function resolveQuestionSection(item) {
+            if (item.section === 'A' || item.section === 'B') {
+                return item.section;
+            }
+            var key = document.getElementById('paperSelect').value;
+            return inferSectionForQuestion(item.qno, key);
+        }
+
+        function drawAnswerSectionHeading(doc, paper, section, cL, cR, cT) {
+            var sLabel = SECTION_LABELS[section];
+            if (!sLabel) return 0;
+            var cx = PG.W / 2;
+            var y = cT + 3;
+            var blockH = fontsReady ? 13 : 8;
+            doc.setDrawColor(0);
+            doc.setTextColor(0);
+            if (fontsReady) {
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(11);
+                doc.text(sLabel.hi, cx, y + 4, { align: 'center' });
+            }
+            doc.setFont('times', 'bold');
+            doc.setFontSize(11);
+            doc.text(sLabel.en, cx, y + (fontsReady ? 9 : 4), { align: 'center' });
+            doc.setLineWidth(0.2);
+            doc.line(cL, y + blockH - 1, cR, y + blockH - 1);
+            return blockH + 2;
+        }
 
         function formatTimeEn(h, m) {
             var parts = [];
@@ -797,10 +1447,14 @@
         }
 
         function getSelectedPaper(questions) {
-            var base = PAPERS[document.getElementById('paperSelect').value] || PAPERS.gs1;
+            var paperKey = document.getElementById('paperSelect').value;
+            var base = PAPERS[paperKey] || PAPERS.gs1;
             var totalMarks = 0;
             for (var i = 0; i < questions.length; i++) {
                 totalMarks += getEffectiveMarks(questions[i]);
+            }
+            if (paperKey === 'opt1' || paperKey === 'opt2' || paperKey === 'essay') {
+                totalMarks = 250;
             }
             var h = parseInt(document.getElementById('timeHours').value, 10) || 0;
             var m = parseInt(document.getElementById('timeMins').value, 10) || 0;
@@ -838,16 +1492,49 @@
         }
 
         async function loadFonts() {
-            try {
-                var results = await Promise.all([
-                    fetch('fonts/NotoSansDevanagari-Regular.ttf').then(function (r) { return r.arrayBuffer(); }),
-                    fetch('fonts/NotoSansDevanagari-Bold.ttf').then(function (r) { return r.arrayBuffer(); })
-                ]);
-                fontRegBase64 = bufToBase64(results[0]);
-                fontBoldBase64 = bufToBase64(results[1]);
-                fontsReady = true;
-            } catch (e) {
-                console.warn('Devanagari fonts failed to load:', e);
+            if (fontsReady) {
+                return true;
+            }
+            if (fontLoadPromise) {
+                return fontLoadPromise;
+            }
+            fontLoadPromise = (async function () {
+                try {
+                    var results = await Promise.all([
+                        fetch('fonts/NotoSansDevanagari-Regular.ttf').then(function (r) {
+                            if (!r.ok) throw new Error('Regular font HTTP ' + r.status);
+                            return r.arrayBuffer();
+                        }),
+                        fetch('fonts/NotoSansDevanagari-Bold.ttf').then(function (r) {
+                            if (!r.ok) throw new Error('Bold font HTTP ' + r.status);
+                            return r.arrayBuffer();
+                        })
+                    ]);
+                    fontRegBase64 = bufToBase64(results[0]);
+                    fontBoldBase64 = bufToBase64(results[1]);
+                    fontsReady = true;
+                    updateFontStatusUi();
+                    return true;
+                } catch (e) {
+                    console.warn('Devanagari fonts failed to load:', e);
+                    updateFontStatusUi();
+                    return false;
+                } finally {
+                    fontLoadPromise = null;
+                }
+            })();
+            return fontLoadPromise;
+        }
+
+        function updateFontStatusUi() {
+            var box = document.getElementById('infoBox');
+            if (!box) return;
+            var base = '<strong>Pages:</strong> 10 marks = 2 pages, 15 marks = 3 pages, 20 marks = 4 pages. '
+                + 'Format matches the official UPSC CSE Mains QCA booklet. Hindi translation is generated automatically.';
+            if (fontsReady) {
+                box.innerHTML = base + ' <strong>Hindi fonts:</strong> loaded.';
+            } else {
+                box.innerHTML = base + ' <strong>Hindi fonts:</strong> not loaded — serve this page over http(s) (e.g. GitHub Pages), not as a local file.';
             }
         }
 
@@ -1023,6 +1710,15 @@
             cards.forEach(function (card, i) {
                 card.querySelector('.q-num').textContent = i + 1;
             });
+            if (isEssayPaper() && getCurrentCaps().sections) {
+                cards.forEach(function (card, i) {
+                    var secEl = card.querySelector('.q-section');
+                    if (!secEl) return;
+                    secEl.value = i === 0 ? 'A' : 'B';
+                    var qnoEl = card.querySelector('.q-no');
+                    if (qnoEl) qnoEl.value = i === 0 ? 1 : 2;
+                });
+            }
         }
 
         function updateRemoveButtons() {
@@ -1051,7 +1747,14 @@
             var container = document.getElementById('questionsContainer');
             container.innerHTML = '';
             questionCounter = 0;
-            addQuestion();
+            applyDefaultTimeForPaper();
+            if (getPaperMode() === 'full') {
+                insertFullLengthSkeleton(true);
+            } else {
+                addQuestion();
+            }
+            updateBulkFormatHint();
+            updateModeDesc();
         }
 
         function collectQuestions() {
@@ -1081,6 +1784,12 @@
                 if (caps.sections) {
                     var secEl = card.querySelector('.q-section');
                     if (secEl) section = secEl.value || '';
+                    if (!section) {
+                        section = inferSectionForQuestion(
+                            parseInt(card.querySelector('.q-no').value, 10) || (i + 1),
+                            document.getElementById('paperSelect').value
+                        );
+                    }
                 }
 
                 questions.push({
@@ -1109,6 +1818,8 @@
             btn.textContent = 'Translating & Generating...';
 
             try {
+                await loadFonts();
+
                 var qPromises = questions.map(function (q) {
                     return q.text ? translateToHindi(q.text) : Promise.resolve(null);
                 });
@@ -1138,8 +1849,10 @@
                 currentDoc = doc;
                 showPreview(doc);
 
-                if (allTranslated) {
+                if (allTranslated && fontsReady) {
                     showToast(questions.length + ' question' + (questions.length > 1 ? 's' : '') + ' generated with Hindi');
+                } else if (allTranslated && !fontsReady) {
+                    showToast('Sheet generated — Hindi fonts unavailable (use http(s) hosting)');
                 } else {
                     showToast('Sheet generated (some Hindi translations unavailable)');
                 }
@@ -1170,11 +1883,19 @@
 
             var answerPages = 0;
             for (var qi = 0; qi < questions.length; qi++) {
-                answerPages += getPagesForMarks(getEffectiveMarks(questions[qi]));
+                var qItem = questions[qi];
+                if (qItem.subparts && qItem.subparts.length > 0) {
+                    for (var spi = 0; spi < qItem.subparts.length; spi++) {
+                        answerPages += getPagesForMarks(qItem.subparts[spi].marks);
+                    }
+                } else {
+                    answerPages += getPagesForMarks(qItem.marks);
+                }
             }
             var includeRoughForCount = document.getElementById('includeRough').checked;
             var roughCountForTotal = includeRoughForCount ? (parseInt(document.getElementById('roughPageCount').value, 10) || 4) : 0;
-            var totalBookletPages = answerPages + roughCountForTotal;
+            var instrPageCount = includeInstr ? 2 : 0;
+            var totalBookletPages = instrPageCount + answerPages + roughCountForTotal;
 
             var bookletNo = generateBookletNo();
 
@@ -1196,6 +1917,25 @@
             var mLineX = cR - PG.rightMarginW;
 
             var totalPages = includeInstr ? 2 : 0;
+            var answerCurrentSection = null;
+
+            function contentTopForQuestion(item) {
+                var contentTop = cT;
+                if (!getCurrentCaps().sections) {
+                    return contentTop;
+                }
+                var sec = resolveQuestionSection(item);
+                if (sec && sec !== answerCurrentSection) {
+                    // First answer block has no SECTION A band (booklet starts at Q1); show header from B onward.
+                    var skipFirstSectionBanner = answerCurrentSection === null && sec === 'A';
+                    if (!skipFirstSectionBanner) {
+                        var sh = drawAnswerSectionHeading(doc, paper, sec, cL, cR, cT);
+                        contentTop = cT + sh;
+                    }
+                    answerCurrentSection = sec;
+                }
+                return contentTop;
+            }
 
             for (var q = 0; q < questions.length; q++) {
                 var item = questions[q];
@@ -1215,7 +1955,8 @@
                             drawMarginText(doc, mLineX, cR, cT, cB);
 
                             if (sp_p === 0) {
-                                drawSubpartFirstPage(doc, item, si, si === 0, cL, qLineX, mLineX, cR, cT);
+                                var spContentTop = contentTopForQuestion(item);
+                                drawSubpartFirstPage(doc, item, si, si === 0, cL, qLineX, mLineX, cR, spContentTop);
                             }
 
                             drawFooter(doc, totalPages, paper);
@@ -1233,7 +1974,8 @@
                         drawMarginText(doc, mLineX, cR, cT, cB);
 
                         if (p === 0) {
-                            drawQuestion(doc, item, cL, qLineX, mLineX, cR, cT);
+                            var ansContentTop = contentTopForQuestion(item);
+                            drawQuestion(doc, item, cL, qLineX, mLineX, cR, ansContentTop);
                         }
 
                         drawFooter(doc, totalPages, paper);
@@ -1251,7 +1993,6 @@
                 }
             }
 
-            var qpPagesAdded = 0;
             var includeQP = document.getElementById('includeQuestionPaper').checked;
             if (includeQP) {
                 doc.addPage();
@@ -1261,11 +2002,10 @@
                 drawQPInstructionsPage(doc, paper, questions);
 
                 doc.addPage();
-                var lastQpPage = drawQPQuestionsPages(doc, paper, questions, 3);
-                qpPagesAdded = lastQpPage;
+                drawQPQuestionsPages(doc, paper, questions, 3);
             }
 
-            generatedPageCount = totalPages + qpPagesAdded;
+            generatedPageCount = doc.internal.getNumberOfPages();
             return doc;
         }
 
@@ -1307,13 +2047,12 @@
             }
         }
 
-        function drawCoverPage(doc, paper, answerPages, bookletNo, includeQP) {
+        function drawCoverPage(doc, paper, totalBookletPages, bookletNo, includeQP) {
             var W = PG.W, H = PG.H;
             var mL = 14, mR = 14;
             var cx = W / 2;
             var rX = W - mR;
             var y;
-            var totalBookletPages = answerPages + 2;
 
             doc.setDrawColor(0);
             doc.setLineWidth(0.4);
@@ -1773,13 +2512,13 @@
             }
         }
 
-        function drawQuestion(doc, item, cL, qLineX, mLineX, cR, cT) {
+        function drawQuestion(doc, item, cL, qLineX, mLineX, cR, contentTop) {
             var textPad = 3;
             var textX = qLineX + textPad;
             var maxW = mLineX - qLineX - textPad - 2;
             var qCx = cL + PG.qColW / 2;
             var lineH = 5.2;
-            var y = cT + 9;
+            var y = contentTop + 9;
             var hasSubparts = item.subparts && item.subparts.length > 0;
 
             doc.setFont('times', 'bold');
@@ -1859,13 +2598,13 @@
             }
         }
 
-        function drawSubpartFirstPage(doc, item, si, includeStem, cL, qLineX, mLineX, cR, cT) {
+        function drawSubpartFirstPage(doc, item, si, includeStem, cL, qLineX, mLineX, cR, contentTop) {
             var textPad = 3;
             var textX = qLineX + textPad;
             var maxW = mLineX - qLineX - textPad - 2;
             var qCx = cL + PG.qColW / 2;
             var lineH = 5.2;
-            var y = cT + 9;
+            var y = contentTop + 9;
 
             var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
             var letter = letters[si] || (si + 1);
@@ -2086,7 +2825,32 @@
 
             y += headerH;
 
-            var instructions = [
+            var instructions;
+            if (document.getElementById('paperSelect').value === 'essay') {
+                instructions = [
+                    {
+                        hi: '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 \u092E\u0947\u0902 \u0926\u094B \u0916\u0902\u0921 \u0939\u0948\u0902 \u2014 \u0916\u0902\u0921 \u0915 \u0914\u0930 \u0916\u0902\u0921 \u0916 \u0964 \u092A\u094D\u0930\u0924\u094D\u092F\u0947\u0915 \u0916\u0902\u0921 \u092E\u0947\u0902 \u0938\u0947 \u090F\u0915 \u0928\u093F\u092C\u0902\u0927 \u0932\u093F\u0916\u0928\u093E \u0939\u0948 \u0964',
+                        en: 'The Question Paper has two Sections \u2014 A and B. You must write one essay from Section A and one from Section B.'
+                    },
+                    {
+                        hi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 \u092A\u094D\u0930\u0924\u094D\u092F\u0947\u0915 \u0916\u0902\u0921 \u0915\u0947 \u0932\u093F\u090F \u0915\u0947\u0935\u0932 \u090F\u0915 \u0928\u093F\u092C\u0902\u0927 \u0939\u0948 \u0964',
+                        en: 'The QCA Booklet provides one answer space per section (125 marks each).'
+                    },
+                    {
+                        hi: '\u0936\u092C\u094D\u0926 \u0938\u0940\u092E\u093E, \u091C\u0939\u093E\u0901 \u0928\u093F\u0930\u094D\u0926\u093F\u0937\u094D\u091F \u0939\u0948, \u0915\u093E \u0905\u0928\u0941\u0938\u0930\u0923 \u0915\u093F\u092F\u093E \u091C\u093E\u0928\u093E \u091A\u093E\u0939\u093F\u090F \u0964',
+                        en: 'Word limit in questions, wherever specified, should be adhered to.'
+                    },
+                    {
+                        hi: '\u092A\u094D\u0930\u0936\u094D\u0928\u094B\u0902 \u0915\u0947 \u0909\u0924\u094D\u0924\u0930 \u0909\u0938\u0940 \u092E\u093E\u0927\u094D\u092F\u092E \u092E\u0947\u0902 \u0932\u093F\u0916\u0947 \u091C\u093E\u0928\u0947 \u091A\u093E\u0939\u093F\u090F \u091C\u094B \u0906\u092A\u0928\u0947 \u0905\u092A\u0928\u0947 \u092A\u094D\u0930\u0935\u0947\u0936 \u092A\u094D\u0930\u092E\u093E\u0923\u002D\u092A\u0924\u094D\u0930 \u092E\u0947\u0902 \u0905\u0927\u093F\u0915\u0943\u0924 \u0915\u093F\u092F\u093E \u0939\u0948 \u0964',
+                        en: 'Answers must be written in the medium authorized in the Admission Certificate.'
+                    },
+                    {
+                        hi: '\u092A\u094D\u0930\u0936\u094D\u0928\u002D\u0938\u0939\u002D\u0909\u0924\u094D\u0924\u0930 \u092A\u0941\u0938\u094D\u0924\u093F\u0915\u093E \u092E\u0947\u0902 \u0915\u093F\u0938\u0940 \u092A\u0943\u0937\u094D\u0920 \u092F\u093E \u092A\u0943\u0937\u094D\u0920 \u0915\u0947 \u092D\u093E\u0917 \u0915\u094B \u0916\u093E\u0932\u0940 \u091B\u094B\u0921\u093C\u0928\u0947 \u092A\u0930, \u0909\u0938\u0947 \u0938\u094D\u092A\u0937\u094D\u091F \u0930\u0942\u092A \u0938\u0947 \u0915\u093E\u091F \u0926\u093F\u092F\u093E \u091C\u093E\u0928\u093E \u091A\u093E\u0939\u093F\u090F \u0964',
+                        en: 'Any page or portion of the page left blank in the Question-cum-Answer Booklet must be clearly struck off.'
+                    }
+                ];
+            } else {
+            instructions = [
                 {
                     hi: '\u0907\u0938 \u092A\u094D\u0930\u0936\u094D\u0928\u002D\u092A\u0924\u094D\u0930 \u092E\u0947\u0902 \u0939\u093F\u0928\u094D\u0926\u0940 \u090F\u0935\u0902 \u0905\u0902\u0917\u094D\u0930\u0947\u091C\u093C\u0940 \u0926\u094B\u0928\u094B\u0902 \u092E\u0947\u0902 \u0915\u0941\u0932 ' + nWordHi + ' (' + nQ + ') \u092A\u094D\u0930\u0936\u094D\u0928 \u0926\u093F\u090F \u0917\u090F \u0939\u0948\u0902 \u0964',
                     en: 'There are ' + nWord + ' (' + nQ + ') questions printed both in HINDI and in ENGLISH.'
@@ -2112,6 +2876,7 @@
                     en: 'Any page or portion of the page left blank in the Question-cum-Answer Booklet must be clearly struck off.'
                 }
             ];
+            }
 
             var rowY = y;
             var numPad = 8;
@@ -2197,24 +2962,80 @@
             doc.text(String(pageNum), W / 2, H - 10, { align: 'center' });
         }
 
+        function qpAdvancePage(doc, paper, state) {
+            drawQPFooter(doc, paper, state.pageNum);
+            doc.addPage();
+            state.pageNum++;
+            drawQPSectionHeading(doc, paper);
+            state.y = state.headerBottom + 4;
+        }
+
+        function qpEnsureSpace(doc, paper, state, needed) {
+            if (state.y + needed <= state.pageBottom) return;
+            qpAdvancePage(doc, paper, state);
+        }
+
+        function qpDrawLines(doc, paper, state, lines, fontName, fontSize, x, lineH) {
+            if (!lines || lines.length === 0) return;
+            doc.setFont(fontName, 'normal');
+            doc.setFontSize(fontSize);
+            doc.setTextColor(0);
+            for (var i = 0; i < lines.length; i++) {
+                qpEnsureSpace(doc, paper, state, lineH);
+                doc.text(lines[i], x, state.y);
+                state.y += lineH;
+            }
+        }
+
+        function qpDrawSectionHeader(doc, paper, state, section) {
+            if (!section || section === state.currentSection) return;
+            var sLabel = SECTION_LABELS[section];
+            if (!sLabel) {
+                state.currentSection = section;
+                return;
+            }
+            var blockH = fontsReady ? 16 : 10;
+            qpEnsureSpace(doc, paper, state, blockH);
+            var W = PG.W;
+            var mL = 14;
+            var rX = W - 14;
+            if (fontsReady) {
+                doc.setFont('NotoDevBold', 'normal');
+                doc.setFontSize(12);
+                doc.setTextColor(0);
+                doc.text(sLabel.hi, W / 2, state.y + 5, { align: 'center' });
+            }
+            doc.setFont('times', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            doc.text(sLabel.en, W / 2, state.y + (fontsReady ? 11 : 5), { align: 'center' });
+            doc.setLineWidth(0.25);
+            doc.line(mL, state.y + blockH - 2, rX, state.y + blockH - 2);
+            state.y += blockH;
+            state.currentSection = section;
+        }
+
         function drawQPQuestionsPages(doc, paper, questions, startPageNum) {
             var W = PG.W, H = PG.H;
             var mL = 14, mR = 14;
             var rX = W - mR;
-            var pageNum = startPageNum;
             var qNumW = 12;
             var marksReserve = 14;
             var textW = (rX - mL) - qNumW - marksReserve;
             var textX = mL + qNumW;
-
-            var headerBottom = 22;
-            var pageBottom = H - 18;
             var lineH = 5.4;
             var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
+            var state = {
+                pageNum: startPageNum,
+                y: 0,
+                headerBottom: 22,
+                pageBottom: H - 18,
+                currentSection: null
+            };
+
             drawQPSectionHeading(doc, paper);
-            var y = headerBottom + 4;
-            var currentSection = null;
+            state.y = state.headerBottom + 4;
 
             for (var qi = 0; qi < questions.length; qi++) {
                 var item = questions[qi];
@@ -2222,9 +3043,17 @@
                 var wlHi = ' (' + item.wordLimit + ' \u0936\u092C\u094D\u0926\u094B\u0902 \u092E\u0947\u0902 \u0909\u0924\u094D\u0924\u0930 \u0926\u0940\u091C\u093F\u090F)';
                 var wlEn = ' (Answer in ' + item.wordLimit + ' words)';
 
-                var stemHi = [];
-                var stemEn = [];
+                qpDrawSectionHeader(doc, paper, state, resolveQuestionSection(item));
+
+                qpEnsureSpace(doc, paper, state, 8);
+                doc.setFont('times', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(0);
+                doc.text(String(item.qno) + '.', mL + 2, state.y);
+
                 if (item.text) {
+                    var stemHi = [];
+                    var stemEn = [];
                     if (item.hindi && fontsReady) {
                         doc.setFont('NotoDevReg', 'normal');
                         doc.setFontSize(12);
@@ -2233,119 +3062,58 @@
                     doc.setFont('times', 'normal');
                     doc.setFontSize(12);
                     stemEn = doc.splitTextToSize(item.text + (hasSubparts ? '' : wlEn), textW);
-                }
 
-                var spSets = [];
-                for (var si = 0; hasSubparts && si < item.subparts.length; si++) {
-                    var sp = item.subparts[si];
-                    var label = '(' + (letters[si] || (si + 1)) + ')';
-                    var sHi = [];
-                    if (sp.hindi && fontsReady) {
-                        doc.setFont('NotoDevReg', 'normal');
-                        doc.setFontSize(12);
-                        sHi = doc.splitTextToSize(label + ' ' + sp.hindi, textW);
+                    if (stemHi.length) {
+                        qpDrawLines(doc, paper, state, stemHi, fontsReady ? 'NotoDevReg' : 'times', 12, textX, lineH);
+                        state.y += 2;
                     }
-                    doc.setFont('times', 'normal');
-                    doc.setFontSize(12);
-                    var sEn = doc.splitTextToSize(label + ' ' + sp.text, textW);
-                    spSets.push({ hi: sHi, en: sEn, marks: sp.marks });
-                }
-
-                var blockH = 0;
-                if (stemHi.length) blockH += stemHi.length * lineH + 2;
-                if (stemEn.length) blockH += stemEn.length * lineH;
-                if (hasSubparts) {
-                    if (item.text) blockH += 3;
-                    for (var k = 0; k < spSets.length; k++) {
-                        if (spSets[k].hi.length) blockH += spSets[k].hi.length * lineH + 2;
-                        blockH += spSets[k].en.length * lineH + 3;
-                    }
-                }
-                blockH += 6;
-
-                var needSectionHeader = item.section && item.section !== currentSection;
-                var sectionHeaderH = needSectionHeader ? 16 : 0;
-
-                if ((y + blockH + sectionHeaderH > pageBottom) && qi > 0) {
-                    drawQPFooter(doc, paper, pageNum);
-                    doc.addPage();
-                    pageNum++;
-                    drawQPSectionHeading(doc, paper);
-                    y = headerBottom + 4;
-                }
-
-                if (needSectionHeader) {
-                    var sLabel = SECTION_LABELS[item.section];
-                    if (sLabel) {
-                        if (fontsReady) {
-                            doc.setFont('NotoDevBold', 'normal');
-                            doc.setFontSize(12);
-                            doc.setTextColor(0);
-                            doc.text(sLabel.hi, W / 2, y + 5, { align: 'center' });
+                    if (stemEn.length) {
+                        qpDrawLines(doc, paper, state, stemEn, 'times', 12, textX, lineH);
+                        if (!hasSubparts) {
+                            doc.setFont('times', 'bold');
+                            doc.setFontSize(11);
+                            doc.text(String(item.marks), rX - 2, state.y - lineH, { align: 'right' });
                         }
-                        doc.setFont('times', 'bold');
-                        doc.setFontSize(12);
-                        doc.setTextColor(0);
-                        doc.text(sLabel.en, W / 2, y + 11, { align: 'center' });
-                        y += sectionHeaderH;
                     }
-                    currentSection = item.section;
-                }
-
-                doc.setFont('times', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(0);
-                doc.text(String(item.qno) + '.', mL + 2, y);
-
-                var lineY = y;
-                var stemEnLastY = null;
-
-                if (stemHi.length) {
-                    doc.setFont('NotoDevReg', 'normal');
-                    doc.setFontSize(12);
-                    doc.text(stemHi, textX, lineY);
-                    lineY += stemHi.length * lineH + 2;
-                }
-                if (stemEn.length) {
-                    doc.setFont('times', 'normal');
-                    doc.setFontSize(12);
-                    doc.text(stemEn, textX, lineY);
-                    stemEnLastY = lineY + (stemEn.length - 1) * lineH;
-                    lineY = stemEnLastY + lineH;
-                }
-
-                if (!hasSubparts && stemEnLastY !== null) {
+                } else if (!hasSubparts) {
                     doc.setFont('times', 'bold');
                     doc.setFontSize(11);
-                    doc.text(String(item.marks), rX - 2, stemEnLastY, { align: 'right' });
-                } else if (hasSubparts) {
-                    if (item.text) lineY += 1;
-                    for (var ki = 0; ki < spSets.length; ki++) {
-                        var ss = spSets[ki];
-                        if (ss.hi.length) {
+                    doc.text(String(item.marks), rX - 2, state.y, { align: 'right' });
+                    state.y += lineH;
+                }
+
+                if (hasSubparts) {
+                    if (item.text) state.y += 1;
+                    for (var si = 0; si < item.subparts.length; si++) {
+                        var sp = item.subparts[si];
+                        var label = '(' + (letters[si] || (si + 1)) + ')';
+                        var sHi = [];
+                        if (sp.hindi && fontsReady) {
                             doc.setFont('NotoDevReg', 'normal');
                             doc.setFontSize(12);
-                            doc.text(ss.hi, textX, lineY);
-                            lineY += ss.hi.length * lineH + 2;
+                            sHi = doc.splitTextToSize(label + ' ' + sp.hindi, textW);
                         }
                         doc.setFont('times', 'normal');
                         doc.setFontSize(12);
-                        doc.text(ss.en, textX, lineY);
-                        var spLastY = lineY + (ss.en.length - 1) * lineH;
+                        var sEn = doc.splitTextToSize(label + ' ' + sp.text, textW);
 
+                        if (sHi.length) {
+                            qpDrawLines(doc, paper, state, sHi, 'NotoDevReg', 12, textX, lineH);
+                            state.y += 2;
+                        }
+                        qpDrawLines(doc, paper, state, sEn, 'times', 12, textX, lineH);
                         doc.setFont('times', 'bold');
                         doc.setFontSize(11);
-                        doc.text(String(ss.marks), rX - 2, spLastY, { align: 'right' });
-
-                        lineY = spLastY + lineH + 2;
+                        doc.text(String(sp.marks), rX - 2, state.y - lineH, { align: 'right' });
+                        state.y += 2;
                     }
                 }
 
-                y += blockH;
+                state.y += 4;
             }
 
-            drawQPFooter(doc, paper, pageNum);
-            return pageNum;
+            drawQPFooter(doc, paper, state.pageNum);
+            return state.pageNum;
         }
 
         function showPreview(doc) {
@@ -2389,12 +3157,89 @@
         }
 
         addQuestion();
+        setPaperMode('sample');
+        updateBulkFormatHint();
+
+        window.__testWaitForFonts = function () {
+            if (fontsReady) {
+                return Promise.resolve(true);
+            }
+            return loadFonts().then(function () {
+                return fontsReady;
+            });
+        };
+
+        window.__testApplyHindi = function (questions) {
+            var hiStem = '\u0928\u093F\u092E\u094D\u0928\u0932\u093F\u0916\u093F\u0924 \u092A\u094D\u0930\u0936\u094D\u0928 \u0915\u093E \u0909\u0924\u094D\u0924\u0930 \u0939\u093F\u0902\u0926\u0940 \u092E\u0947\u0902 \u0926\u0940\u091C\u093F\u090F\u0964';
+            var hiSp = '\u0907\u0938 \u0909\u092A\u002D\u092A\u094D\u0930\u0936\u094D\u0928 \u0915\u093E \u0909\u0924\u094D\u0924\u0930 \u0939\u093F\u0902\u0926\u0940 \u092E\u0947\u0902 \u0932\u093F\u0916\u0947\u0902\u0964';
+            var out = [];
+            for (var i = 0; i < questions.length; i++) {
+                var q = questions[i];
+                var copy = {
+                    text: q.text,
+                    marks: q.marks,
+                    wordLimit: q.wordLimit,
+                    qno: q.qno,
+                    section: q.section,
+                    hindi: hiStem + ' (' + q.qno + ')',
+                    subparts: []
+                };
+                if (q.subparts && q.subparts.length) {
+                    for (var s = 0; s < q.subparts.length; s++) {
+                        copy.subparts.push({
+                            text: q.subparts[s].text,
+                            marks: q.subparts[s].marks,
+                            hindi: hiSp + ' (' + String.fromCharCode(97 + s) + ')'
+                        });
+                    }
+                }
+                out.push(copy);
+            }
+            return out;
+        };
+
+        window.__testGenerateSheet = function (paperKey, questions, opts) {
+            opts = opts || {};
+            document.getElementById('paperSelect').value = paperKey;
+            document.getElementById('includeInstructions').checked = opts.includeInstructions !== false;
+            document.getElementById('includeRough').checked = opts.includeRough !== false;
+            document.getElementById('includeQuestionPaper').checked = opts.includeQuestionPaper !== false;
+            document.getElementById('roughPageCount').value = opts.roughPageCount != null ? opts.roughPageCount : 4;
+            document.getElementById('timeHours').value = opts.hours != null ? opts.hours : 3;
+            document.getElementById('timeMins').value = opts.mins != null ? opts.mins : 0;
+            var qs = questions;
+            if (opts.withHindi) {
+                qs = window.__testApplyHindi(questions);
+            }
+            var doc = generateSheet(qs);
+            var answerPages = 0;
+            for (var qi = 0; qi < qs.length; qi++) {
+                var qItem = qs[qi];
+                if (qItem.subparts && qItem.subparts.length > 0) {
+                    for (var spi = 0; spi < qItem.subparts.length; spi++) {
+                        answerPages += getPagesForMarks(qItem.subparts[spi].marks);
+                    }
+                } else {
+                    answerPages += getPagesForMarks(qItem.marks);
+                }
+            }
+            var rough = opts.includeRough !== false ? (parseInt(document.getElementById('roughPageCount').value, 10) || 4) : 0;
+            var instr = opts.includeInstructions !== false ? 2 : 0;
+            return {
+                doc: doc,
+                pages: doc.internal.getNumberOfPages(),
+                expectedBookletPages: instr + answerPages + rough,
+                fontsReady: fontsReady,
+                pdfBase64: doc.output('datauristring').split(',')[1]
+            };
+        };
 
         loadFonts().then(function () {
             if (fontsReady) {
                 console.log('Devanagari fonts loaded successfully');
             }
         });
+        updateFontStatusUi();
     </script>
 </body>
 

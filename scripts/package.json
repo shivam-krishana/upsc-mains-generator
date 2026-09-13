@@ -1,0 +1,15 @@
+{
+  "name": "upsc-mains-generator-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test-all-papers.mjs",
+    "test:detailed": "node test-detailed.mjs",
+    "screenshot:all": "node screenshot-all-papers.mjs"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "4.10.38",
+    "puppeteer": "22.15.0"
+  }
+}
